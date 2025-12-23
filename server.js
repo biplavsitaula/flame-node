@@ -4,11 +4,12 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import productRoutes from "./routes/product.route.js";
 
+
 dotenv.config();
 connectDB();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Middlewares
 app.use(cors());
@@ -16,7 +17,7 @@ app.use(express.json());
 app.use("/api", productRoutes);
 
 // Routes
-app.get("/api", (req, res) => {
+app.get("/api/check", (req, res) => {
   res.status(200).json({ message: "Hello World!" });
 });
 

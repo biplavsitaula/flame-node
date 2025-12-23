@@ -1,15 +1,20 @@
 import express from "express";
-import Product from "../models/product.models.js";
+import {
+  createNewProduct,
+  deleteProductById,
+  fetchAllProducts,
+  fetchProductById,
+  updateExistingProduct,
+} from "../controller/product.controller.js";
+import { checkAdmin } from "../middleware/admin.middleware.js";
 
 const routes = express.Router();
 
-routes.get("/products", async (req, res) => {
-  try {
-    const products = await Product.find();
-    res.status(200).json({ message: "Success", data: products });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+routes.get("/products", fetchAllProducts);
+routes.get("/products/:id", fetchProductById);
+
+routes.post("/products", checkAdmin, createNewProduct);
+routes.put("/products/:id", checkAdmin, updateExistingProduct);
+routes.delete("/products/:id", checkAdmin, deleteProductById);
 
 export default routes;
