@@ -8,13 +8,15 @@ import {
 } from "../controller/product.controller.js";
 import { checkAdmin } from "../middleware/admin.middleware.js";
 
-const routes = express.Router();
+const router = express.Router();
 
-routes.get("/products", fetchAllProducts);
-routes.get("/products/:id", fetchProductById);
+// Public routes
+router.get("/products", fetchAllProducts);
+router.get("/products/:id", fetchProductById);
 
-routes.post("/products", checkAdmin, createNewProduct);
-routes.put("/products/:id", checkAdmin, updateExistingProduct);
-routes.delete("/products/:id", checkAdmin, deleteProductById);
+// Admin routes
+router.post("/products", checkAdmin, createNewProduct);
+router.put("/products/:id", checkAdmin, updateExistingProduct);
+router.delete("/products/:id", checkAdmin, deleteProductById);
 
-export default routes;
+export default router;

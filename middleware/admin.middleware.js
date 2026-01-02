@@ -1,8 +1,12 @@
+// This file is kept for backward compatibility
+// Use auth.middleware.js for authentication and authorization
+import { authenticate, checkAdmin as checkAdminAuth } from "./auth.middleware.js";
+
+// Export as middleware function for backward compatibility
 export const checkAdmin = (req, res, next) => {
-    res.status(200).json({ message: "Admin access granted (middleware placeholder)" });
-//   const isAdmin = req.headers["x-admin-token"] === "secureadmintoken123";
-//   if (!isAdmin) {
-//     return res.status(403).json({ message: "Access denied. Admins only." });
-//   }
-    next();
+  // Chain authenticate and checkAdminAuth
+  authenticate(req, res, (err) => {
+    if (err) return next(err);
+    checkAdminAuth(req, res, next);
+  });
 };

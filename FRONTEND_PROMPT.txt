@@ -1,0 +1,121 @@
+I have a complete production-ready backend API for a Liquor Shop Admin Panel. The backend is running at http://localhost:5000/api and provides all necessary REST endpoints.
+
+Build a Next.js 14 frontend (App Router) that integrates with this backend API. The UI should match the dark-themed admin dashboard design with:
+
+**BACKEND API BASE URL:** http://localhost:5000/api
+
+**REQUIRED PAGES:**
+1. Dashboard (/dashboard) - KPI cards, charts (Stock by Category bar chart, Sales Trend area chart, Products by Category donut chart)
+2. Products (/products) - Product table with filters (All, Out of Stock, Low Stock, Top Sellers, Most Reviewed, Recommended), search, sort, pagination
+3. Orders (/orders) - Orders table with status updates, bill printing
+4. Payments (/payments) - Payment table with filters (All, QR Payment, COD), summary cards
+5. Analytics (/analytics) - Revenue metrics with growth %, sales trend chart, stock by category chart
+6. Stock Alerts (/stock-alerts) - Out of stock, low stock sections with reorder functionality
+7. Top Sellers (/top-sellers) - Ranked products list, sales insights cards
+8. Recommended (/recommended) - Recommended products table, most recommended sidebar
+9. Reviews (/reviews) - Review summary with rating distribution, most reviewed products
+
+**API ENDPOINTS TO INTEGRATE:**
+
+Products:
+- GET /api/products (query: search, category, status, view, sortBy, sortOrder, page, limit)
+- GET /api/products/:id
+- POST /api/products (body: name, category, brand, price, discountPercent, stock, imageUrl, etc.)
+- PUT /api/products/:id
+- DELETE /api/products/:id
+
+Orders:
+- GET /api/orders (query: search, status, paymentMethod, sortBy, sortOrder, page, limit)
+- GET /api/orders/:id
+- GET /api/orders/bill/:billNumber
+- POST /api/orders (body: customer, items, paymentMethod)
+- PUT /api/orders/:id (body: { status })
+
+Payments:
+- GET /api/payments (query: search, method, status, sortBy, sortOrder, page, limit)
+- GET /api/payments/summary (returns: totalPayments, completed, pending)
+- GET /api/payments/:id
+- POST /api/payments
+- PUT /api/payments/:id (body: { status })
+
+Analytics:
+- GET /api/analytics/summary (returns: totalRevenue, totalSales, avgOrderValue, productsSold with growth %)
+- GET /api/analytics/sales-trend (monthly chart data)
+- GET /api/analytics/stock-by-category (chart data)
+- GET /api/analytics/products-by-category (chart data)
+- GET /api/analytics/revenue-by-category (chart data)
+
+Stock Alerts:
+- GET /api/stock-alerts/out-of-stock
+- GET /api/stock-alerts/low-stock (query: threshold)
+- GET /api/stock-alerts/all (query: threshold)
+- GET /api/stock-alerts/reorder-report
+- PUT /api/stock-alerts/reorder/:id (body: { quantity })
+
+Top Sellers:
+- GET /api/top-sellers/products
+- GET /api/top-sellers/insights (returns: trendingCategory, bestCategory, peakSalesDay)
+
+Reviews:
+- GET /api/reviews (query: search, productId, rating, sortBy, sortOrder, page, limit)
+- GET /api/reviews/summary (returns: totalReviews, averageRating, ratingDistribution)
+- GET /api/reviews/most-reviewed (query: limit)
+- POST /api/reviews
+
+Notifications:
+- GET /api/notifications (query: type, isRead, sortBy, sortOrder, page, limit)
+- GET /api/notifications/unread-count
+- PUT /api/notifications/:id/read
+- PUT /api/notifications/read-all
+
+Export:
+- GET /api/export/monthly?year=2024&month=12&type=excel
+- GET /api/export/monthly?year=2024&month=12&type=pdf
+
+**API RESPONSE FORMAT:**
+All endpoints return: { success: boolean, message: string, data: any, pagination?: { page, limit, total, pages } }
+
+**UI REQUIREMENTS:**
+- Dark theme (black/dark gray background, white text, orange accents)
+- Left sidebar navigation with all menu items
+- Top header with search, "Export Data" button, "+ Add Product" button, notification bell with badge, user profile
+- Reusable DataTable component with search, sort, filter, pagination
+- KPI cards with growth percentages and icons
+- Charts using Recharts or Chart.js
+- Status badges (In Stock/Low Stock/Out of Stock - green/yellow/red)
+- Modal/Drawer for forms
+- Toast notifications for user feedback
+- Loading states and error handling
+
+**TECHNICAL REQUIREMENTS:**
+- Next.js 14 with App Router
+- TypeScript
+- Tailwind CSS (already configured)
+- React Query (TanStack Query) for server state
+- React Hook Form for forms
+- Centralized API client (lib/api.ts)
+- Authentication context (protect admin routes)
+- Real-time notification polling (every 30s)
+- Responsive design
+
+**FOLDER STRUCTURE:**
+app/ (pages), components/ (reusable components), lib/ (API client, utils), hooks/ (custom hooks), context/ (Auth, Notifications), types/ (TypeScript types)
+
+**KEY FEATURES:**
+- Automatic discount calculation (discountPercent → discountAmount, finalPrice)
+- Stock status auto-determination (0 = Out, <10 = Low, >=10 = In Stock)
+- Real-time notification updates
+- Server-side pagination, search, sorting, filtering
+- Chart-ready data from analytics endpoints
+- Export functionality (Excel/PDF download)
+
+Start building the complete Next.js frontend with all pages, components, and API integrations. Ensure proper error handling, loading states, and user experience.
+
+
+
+
+
+
+
+
+

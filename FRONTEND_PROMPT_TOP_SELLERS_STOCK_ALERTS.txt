@@ -1,0 +1,100 @@
+Build Next.js 14 pages for Top Sellers and Stock Alerts that integrate with the backend APIs.
+
+## TOP SELLERS PAGE (/top-sellers)
+
+**Layout:**
+- Left: Top Selling Products list (ranked 1-5) with rank badge, product image, name, category, units sold
+- Right: Sales Insights cards (Trending Up with %, Best Category, Peak Sales Day)
+- Bottom: Products table sorted by totalSold
+
+**API Endpoints:**
+- GET /api/top-sellers/products?limit=5 - Get top 5 products for list
+- GET /api/top-sellers/insights - Get sales insights (trendingCategory, bestCategory, peakSalesDay)
+- GET /api/top-sellers/products?page=1&limit=10 - Get all products for table
+
+**Response Format:**
+- Products: { success, data: [{ rank, name, category, totalSold, status, ... }], pagination }
+- Insights: { success, data: { trendingCategory: { category, growth, unitsSold }, bestCategory: { category, unitsSold }, peakSalesDay: { day, percentage, orderCount } } }
+
+**UI Requirements:**
+- Rank numbers in orange circles
+- Units sold in orange text (e.g., "567 sold")
+- Green card for trending category with "+23%" format
+- Orange card for best category
+- Dark grey card for peak sales day
+- Products table with search, sort, pagination
+
+## STOCK ALERTS PAGE (/stock-alerts)
+
+**Layout:**
+- Top: Three alert sections:
+  1. Out of Stock (red) - Product list with "Reorder" button
+  2. Going to be Out of Stock Soon (orange) - Products with remaining units, "Reorder" button
+  3. Low Stock (yellow) - Products with remaining units, "Reorder" button
+- Right Sidebar: Quick Actions (Generate Reorder Report, Set Stock Thresholds, Export Inventory)
+- Bottom: Out of Stock Products table with search
+
+**API Endpoints:**
+- GET /api/stock-alerts/all?threshold=10 - Get all alerts grouped by type
+- GET /api/stock-alerts/out-of-stock?search=&page=1&limit=10 - Get out of stock products for table
+- GET /api/stock-alerts/low-stock?threshold=10 - Get low stock products
+- GET /api/stock-alerts/reorder-report?threshold=10 - Generate reorder report
+- PUT /api/stock-alerts/reorder/:id - Reorder product (body: { quantity })
+
+**Response Format:**
+- All Alerts: { success, data: { outOfStock: { count, products: [...] }, goingToBeOutOfStock: { count, products: [...] }, lowStock: { count, products: [...] } } }
+- Out of Stock: { success, data: [...], pagination }
+- Reorder: { success, message, data: { stock, status, ... } }
+
+**UI Requirements:**
+- Red section for out of stock (rgba(239, 68, 68, 0.1) background)
+- Orange section for going out of stock (rgba(249, 115, 22, 0.1) background)
+- Yellow section for low stock (rgba(234, 179, 8, 0.1) background)
+- Show count in section headers (e.g., "Out of Stock (2)")
+- Show remaining units in parentheses (e.g., "Hennessy XO (8 left)")
+- "Reorder" button for each product
+- Reorder modal/form to enter quantity
+- Red "Out of Stock" badges in table
+- Quick actions sidebar with three buttons
+
+**Features:**
+- Real-time polling for stock alerts (every 30s)
+- Reorder functionality with quantity input
+- Generate reorder report (download CSV)
+- Set stock threshold (configurable, default: 10)
+- Export inventory as CSV
+- Search and filter in table
+- Toast notifications for actions
+
+**Component Structure:**
+- TopSellingProductsList - Ranked list with rank badges
+- SalesInsightsCards - Three insight cards
+- StockAlertsSections - Three colored alert sections
+- QuickActionsSidebar - Action buttons sidebar
+- ReorderModal - Form to enter reorder quantity
+- OutOfStockTable - Products table with search
+
+**API Client Functions:**
+```typescript
+// Top Sellers
+topSellersAPI.getProducts(params)
+topSellersAPI.getInsights()
+
+// Stock Alerts
+stockAlertsAPI.getAll({ threshold })
+stockAlertsAPI.getOutOfStock(params)
+stockAlertsAPI.getLowStock({ threshold, ...params })
+stockAlertsAPI.getReorderReport({ threshold })
+stockAlertsAPI.reorder(productId, quantity)
+```
+
+**Error Handling:**
+- Loading states
+- Error messages
+- Empty states
+- Quantity validation (> 0)
+
+Build both pages with proper TypeScript types, React Query for data fetching, and Tailwind CSS styling matching the dark theme dashboard design.
+
+
+
