@@ -31,3 +31,6 @@ router.delete("/auth/users/:id", authenticate, asyncHandler(deleteUserById));
 export default router;
 
 
+
+
+
