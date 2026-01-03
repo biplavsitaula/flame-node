@@ -633,3 +633,6 @@ Authorization: Bearer <token>
 **Use this prompt to build your frontend API integration layer with proper TypeScript types, error handling, and authentication.**
 
 
+
+
+

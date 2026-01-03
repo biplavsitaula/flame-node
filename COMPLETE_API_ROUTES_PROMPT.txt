@@ -1,0 +1,94 @@
+Build Next.js 14 frontend API integration using these complete backend routes:
+
+## BASE URL: http://localhost:5000/api
+
+## AUTHENTICATION ROUTES
+POST /api/auth/register - Register (body: fullName, email, password, role, mobile) → { user, token }
+POST /api/auth/login - Login (body: email, password) → { user, token }
+GET /api/auth/profile - Get profile (Headers: Authorization: Bearer <token>)
+PUT /api/auth/profile - Update profile (Headers: Authorization: Bearer <token>)
+GET /api/auth/users - Get all users (Admin, Headers: Authorization: Bearer <token>, query: role, search, isActive, page, limit)
+GET /api/auth/users/:id - Get user by ID (Admin, Headers: Authorization: Bearer <token>)
+PUT /api/auth/users/:id - Update user (Admin, Headers: Authorization: Bearer <token>)
+DELETE /api/auth/users/:id - Delete user (Super Admin, Headers: Authorization: Bearer <token>)
+
+## PRODUCT ROUTES
+GET /api/products - Get all (Public, query: search, category, status, view, sortBy, sortOrder, page, limit)
+GET /api/products/:id - Get by ID (Public)
+POST /api/products - Create (Admin, Headers: Authorization: Bearer <token>, body: name, category, brand, price, discountPercent, stock, imageUrl, etc.)
+PUT /api/products/:id - Update (Admin, Headers: Authorization: Bearer <token>)
+DELETE /api/products/:id - Delete (Admin, Headers: Authorization: Bearer <token>)
+
+## ORDER ROUTES
+GET /api/orders - Get all (Public, query: search, status, paymentMethod, sortBy, sortOrder, page, limit)
+GET /api/orders/:id - Get by ID (Public)
+GET /api/orders/bill/:billNumber - Get by bill number (Public)
+POST /api/orders - Create (Admin, Headers: Authorization: Bearer <token>, body: customer, items, paymentMethod)
+PUT /api/orders/:id - Update status (Admin, Headers: Authorization: Bearer <token>, body: { status })
+DELETE /api/orders/:id - Delete (Admin, Headers: Authorization: Bearer <token>)
+
+## PAYMENT ROUTES
+GET /api/payments - Get all (Public, query: search, method, status, sortBy, sortOrder, page, limit)
+GET /api/payments/summary - Get summary (Public, returns: totalPayments, completed, pending)
+GET /api/payments/:id - Get by ID (Public)
+POST /api/payments - Create (Admin, Headers: Authorization: Bearer <token>)
+PUT /api/payments/:id - Update status (Admin, Headers: Authorization: Bearer <token>, body: { status })
+DELETE /api/payments/:id - Delete (Admin, Headers: Authorization: Bearer <token>)
+
+## ANALYTICS ROUTES (Admin Only, Headers: Authorization: Bearer <token>)
+GET /api/analytics/summary - Get summary (returns: totalRevenue, totalSales, avgOrderValue, productsSold with growth %)
+GET /api/analytics/sales-trend - Get sales trend (monthly chart data)
+GET /api/analytics/stock-by-category - Get stock by category (chart data)
+GET /api/analytics/products-by-category - Get products by category (chart data)
+GET /api/analytics/revenue-by-category - Get revenue by category (chart data)
+
+## STOCK ALERTS ROUTES (Admin Only, Headers: Authorization: Bearer <token>)
+GET /api/stock-alerts/out-of-stock - Get out of stock (query: search, category, sortBy, sortOrder, page, limit)
+GET /api/stock-alerts/low-stock - Get low stock (query: threshold, search, category, page, limit)
+GET /api/stock-alerts/all - Get all alerts (query: threshold, returns: outOfStock, goingToBeOutOfStock, lowStock)
+GET /api/stock-alerts/reorder-report - Generate report (query: threshold)
+PUT /api/stock-alerts/reorder/:id - Reorder product (body: { quantity })
+
+## TOP SELLERS ROUTES (Admin Only, Headers: Authorization: Bearer <token>)
+GET /api/top-sellers/products - Get top selling (query: search, category, sortBy, sortOrder, page, limit, returns: rank, status)
+GET /api/top-sellers/insights - Get insights (returns: trendingCategory, bestCategory, peakSalesDay)
+
+## REVIEW ROUTES
+GET /api/reviews - Get all (Public, query: search, productId, rating, sortBy, sortOrder, page, limit)
+GET /api/reviews/summary - Get summary (Public, returns: totalReviews, averageRating, ratingDistribution)
+GET /api/reviews/most-reviewed - Get most reviewed (Public, query: limit)
+POST /api/reviews - Create (Public, body: productId, customerName, rating, comment)
+PUT /api/reviews/:id - Update (Admin, Headers: Authorization: Bearer <token>)
+DELETE /api/reviews/:id - Delete (Admin, Headers: Authorization: Bearer <token>)
+
+## NOTIFICATION ROUTES (Admin Only, Headers: Authorization: Bearer <token>)
+GET /api/notifications - Get all (query: type, isRead, sortBy, sortOrder, page, limit, returns: unreadCount)
+GET /api/notifications/unread-count - Get unread count
+GET /api/notifications/:id - Get by ID
+POST /api/notifications - Create (body: type, title, message, relatedId, relatedModel, priority)
+PUT /api/notifications/:id/read - Mark as read
+PUT /api/notifications/read-all - Mark all as read
+DELETE /api/notifications/:id - Delete
+
+## EXPORT ROUTES (Admin Only, Headers: Authorization: Bearer <token>)
+GET /api/export/monthly?year=2024&month=12&type=excel - Export Excel
+GET /api/export/monthly?year=2024&month=12&type=pdf - Export PDF
+
+## RESPONSE FORMAT
+All endpoints: { success: boolean, message: string, data: any, pagination?: { page, limit, total, pages } }
+
+## AUTHENTICATION
+- Store JWT token from login/register
+- Include in headers: Authorization: Bearer <token>
+- Handle 401: Redirect to login
+- Handle 403: Show access denied
+
+## ROLE-BASED ACCESS
+- Public: Products (GET), Reviews (GET/POST), Orders (GET), Payments (GET)
+- Protected: Profile, some GET routes (require token)
+- Admin: All POST/PUT/DELETE, Analytics, Stock Alerts, Top Sellers (require token + admin role)
+- Super Admin: Delete users (require token + super_admin role)
+
+Build API client with TypeScript types, error handling, token management, and React Query for data fetching.
+
+

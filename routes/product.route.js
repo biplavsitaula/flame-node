@@ -6,7 +6,7 @@ import {
   fetchProductById,
   updateExistingProduct,
 } from "../controller/product.controller.js";
-import { checkAdmin } from "../middleware/admin.middleware.js";
+import { authenticate, checkAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -15,8 +15,8 @@ router.get("/products", fetchAllProducts);
 router.get("/products/:id", fetchProductById);
 
 // Admin routes
-router.post("/products", checkAdmin, createNewProduct);
-router.put("/products/:id", checkAdmin, updateExistingProduct);
-router.delete("/products/:id", checkAdmin, deleteProductById);
+router.post("/products", authenticate, checkAdmin, createNewProduct);
+router.put("/products/:id", authenticate, checkAdmin, updateExistingProduct);
+router.delete("/products/:id", authenticate, checkAdmin, deleteProductById);
 
 export default router;

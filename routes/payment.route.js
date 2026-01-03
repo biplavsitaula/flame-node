@@ -7,7 +7,7 @@ import {
   updatePayment,
   deletePaymentById,
 } from "../controller/payment.controller.js";
-import { checkAdmin } from "../middleware/admin.middleware.js";
+import { authenticate, checkAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -17,11 +17,12 @@ router.get("/payments/summary", fetchPaymentSummary);
 router.get("/payments/:id", fetchPaymentById);
 
 // Admin routes
-router.post("/payments", checkAdmin, createNewPayment);
-router.put("/payments/:id", checkAdmin, updatePayment);
-router.delete("/payments/:id", checkAdmin, deletePaymentById);
+router.post("/payments", authenticate, checkAdmin, createNewPayment);
+router.put("/payments/:id", authenticate, checkAdmin, updatePayment);
+router.delete("/payments/:id", authenticate, checkAdmin, deletePaymentById);
 
 export default router;
+
 
 
 

@@ -34,3 +34,6 @@ router.delete("/auth/users/:id", authenticate, checkSuperAdmin, deleteUserById);
 export default router;
 
 
+
+
+
