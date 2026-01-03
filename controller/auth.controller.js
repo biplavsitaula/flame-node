@@ -40,6 +40,7 @@ export const login = async (req, res) => {
       message: "Login successful",
       data: result,
     });
+    console.log(result);
   } catch (error) {
     res.status(401).json({
       success: false,
@@ -66,20 +67,13 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { password, role, ...updateData } = req.body;
+    const { password, ...updateData } = req.body;
 
-    // Don't allow password or role update through this endpoint
+    // Don't allow password update through this endpoint
     if (password) {
       return res.status(400).json({
         success: false,
         message: "Use change password endpoint to update password",
-      });
-    }
-
-    if (role) {
-      return res.status(403).json({
-        success: false,
-        message: "You cannot change your role",
       });
     }
 
@@ -163,5 +157,3 @@ export const deleteUserById = async (req, res) => {
     });
   }
 };
-
-

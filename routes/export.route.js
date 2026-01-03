@@ -1,11 +1,11 @@
 import express from "express";
 import { exportMonthlyData } from "../controller/export.controller.js";
-import { checkAdmin } from "../middleware/admin.middleware.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Admin routes only
-router.get("/export/monthly", checkAdmin, exportMonthlyData);
+// Protected routes
+router.get("/export/monthly", authenticate, exportMonthlyData);
 
 export default router;
 

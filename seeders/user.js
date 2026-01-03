@@ -13,12 +13,10 @@ const seedUsers = async () => {
     // await User.deleteMany();
 
     const usersData = [
-      // Super Admin
       {
         fullName: "John Admin",
         email: "superadmin@flamebeverage.com",
         password: "SuperAdmin123!",
-        role: "super_admin",
         mobile: "9841000001",
         isActive: true,
       },
@@ -26,17 +24,13 @@ const seedUsers = async () => {
         fullName: "Super Admin User",
         email: "superadmin2@flamebeverage.com",
         password: "SuperAdmin123!",
-        role: "super_admin",
         mobile: "9841000002",
         isActive: true,
       },
-
-      // Admin Users
       {
         fullName: "Admin User 1",
         email: "admin1@flamebeverage.com",
         password: "Admin123!",
-        role: "admin",
         mobile: "9841000011",
         isActive: true,
       },
@@ -44,7 +38,6 @@ const seedUsers = async () => {
         fullName: "Admin User 2",
         email: "admin2@flamebeverage.com",
         password: "Admin123!",
-        role: "admin",
         mobile: "9841000012",
         isActive: true,
       },
@@ -52,17 +45,13 @@ const seedUsers = async () => {
         fullName: "Admin User 3",
         email: "admin3@flamebeverage.com",
         password: "Admin123!",
-        role: "admin",
         mobile: "9841000013",
         isActive: true,
       },
-
-      // Vendor Users
       {
         fullName: "Vendor User 1",
         email: "vendor1@flamebeverage.com",
         password: "Vendor123!",
-        role: "vendor",
         mobile: "9841000021",
         isActive: true,
       },
@@ -70,7 +59,6 @@ const seedUsers = async () => {
         fullName: "Vendor User 2",
         email: "vendor2@flamebeverage.com",
         password: "Vendor123!",
-        role: "vendor",
         mobile: "9841000022",
         isActive: true,
       },
@@ -78,7 +66,6 @@ const seedUsers = async () => {
         fullName: "Vendor User 3",
         email: "vendor3@flamebeverage.com",
         password: "Vendor123!",
-        role: "vendor",
         mobile: "9841000023",
         isActive: true,
       },
@@ -136,19 +123,8 @@ const seedUsers = async () => {
     }
 
     // Display summary
-    const userCounts = await User.aggregate([
-      {
-        $group: {
-          _id: "$role",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    console.log("\n📊 User Summary:");
-    userCounts.forEach((item) => {
-      console.log(`   - ${item._id}: ${item.count} users`);
-    });
+    const totalUsers = await User.countDocuments();
+    console.log(`\n📊 Total Users: ${totalUsers}`);
 
     console.log("\n🔑 Default Passwords:");
     console.log("   - Super Admin: SuperAdmin123!");

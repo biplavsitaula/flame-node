@@ -7,7 +7,7 @@ import {
   updateReview,
   deleteReviewById,
 } from "../controller/review.controller.js";
-import { checkAdmin } from "../middleware/admin.middleware.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -17,9 +17,9 @@ router.get("/reviews/summary", fetchReviewSummary);
 router.get("/reviews/most-reviewed", fetchMostReviewedProducts);
 router.post("/reviews", createNewReview);
 
-// Admin routes
-router.put("/reviews/:id", checkAdmin, updateReview);
-router.delete("/reviews/:id", checkAdmin, deleteReviewById);
+// Protected routes
+router.put("/reviews/:id", authenticate, updateReview);
+router.delete("/reviews/:id", authenticate, deleteReviewById);
 
 export default router;
 

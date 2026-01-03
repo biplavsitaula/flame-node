@@ -7,7 +7,7 @@ import {
   updateOrder,
   deleteOrderById,
 } from "../controller/order.controller.js";
-import { checkAdmin } from "../middleware/admin.middleware.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -16,10 +16,10 @@ router.get("/orders", fetchAllOrders);
 router.get("/orders/:id", fetchOrderById);
 router.get("/orders/bill/:billNumber", fetchOrderByBillNumber);
 
-// Admin routes
-router.post("/orders", checkAdmin, createNewOrder);
-router.put("/orders/:id", checkAdmin, updateOrder);
-router.delete("/orders/:id", checkAdmin, deleteOrderById);
+// Protected routes
+router.post("/orders", authenticate, createNewOrder);
+router.put("/orders/:id", authenticate, updateOrder);
+router.delete("/orders/:id", authenticate, deleteOrderById);
 
 export default router;
 

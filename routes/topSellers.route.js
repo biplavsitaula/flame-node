@@ -3,13 +3,13 @@ import {
   fetchTopSellingProducts,
   fetchSalesInsights,
 } from "../controller/topSellers.controller.js";
-import { checkAdmin } from "../middleware/admin.middleware.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Admin routes only
-router.get("/top-sellers/products", checkAdmin, fetchTopSellingProducts);
-router.get("/top-sellers/insights", checkAdmin, fetchSalesInsights);
+// Protected routes
+router.get("/top-sellers/products", authenticate, fetchTopSellingProducts);
+router.get("/top-sellers/insights", authenticate, fetchSalesInsights);
 
 export default router;
 

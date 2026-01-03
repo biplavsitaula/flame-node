@@ -2,9 +2,9 @@ import User from "../models/user.models.js";
 import jwt from "jsonwebtoken";
 
 // Generate JWT Token
-const generateToken = (userId, role) => {
+const generateToken = (userId) => {
   return jwt.sign(
-    { userId, role },
+    { userId },
     process.env.JWT_SECRET || "your-secret-key-change-in-production",
     {
       expiresIn: process.env.JWT_EXPIRE || "30d",
@@ -13,7 +13,7 @@ const generateToken = (userId, role) => {
 };
 
 export const registerUser = async (userData) => {
-  const { email, password, fullName, role, mobile } = userData;
+  const { email, password, fullName, mobile } = userData;
 
   // Check if user already exists
   const existingUser = await User.findOne({ email });
@@ -21,25 +21,18 @@ export const registerUser = async (userData) => {
     throw new Error("User with this email already exists");
   }
 
-  // Validate role
-  const validRoles = ["admin", "super_admin", "vendor"];
-  if (role && !validRoles.includes(role)) {
-    throw new Error(`Invalid role. Must be one of: ${validRoles.join(", ")}`);
-  }
-
   // Create user
   const user = new User({
     email,
     password,
     fullName,
-    role: role || "admin",
     mobile,
   });
 
   await user.save();
 
   // Generate token
-  const token = generateToken(user._id, user.role);
+  const token = generateToken(user._id);
 
   return {
     user: user.toJSON(),
@@ -68,10 +61,9 @@ export const loginUser = async (email, password) => {
 
   // Update last login
   user.lastLogin = new Date();
-  await user.save();
 
   // Generate token
-  const token = generateToken(user._id, user.role);
+  const token = generateToken(user._id);
 
   return {
     user: user.toJSON(),
@@ -102,7 +94,6 @@ export const updateUser = async (userId, updateData) => {
 
 export const getAllUsers = async (query = {}) => {
   const {
-    role,
     search,
     isActive,
     sortBy = "createdAt",
@@ -112,11 +103,6 @@ export const getAllUsers = async (query = {}) => {
   } = query;
 
   const filter = {};
-
-  // Role filter
-  if (role) {
-    filter.role = role;
-  }
 
   // Active filter
   if (isActive !== undefined) {
@@ -164,5 +150,3 @@ export const deleteUser = async (userId) => {
   }
   return { message: "User deleted successfully" };
 };
-
-
