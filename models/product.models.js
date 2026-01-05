@@ -22,7 +22,9 @@ const ProductSchema = new mongoose.Schema(
         "Wine",
         "Beer",
         "Brandy",
+        
       ],
+      lowercase: true,
       index: true,
     },
     brand: {
