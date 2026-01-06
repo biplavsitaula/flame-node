@@ -150,3 +150,4 @@ export const deleteUser = async (userId) => {
   }
   return { message: "User deleted successfully" };
 };
+

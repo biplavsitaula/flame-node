@@ -450,3 +450,4 @@ export const api = {
 **Use this prompt to build your complete frontend API integration layer with proper authentication, error handling, and TypeScript types.**
 
 
+
