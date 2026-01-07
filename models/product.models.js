@@ -129,7 +129,7 @@ ProductSchema.pre("save", function (next) {
 });
 
 // Pre-findOneAndUpdate middleware to handle category and calculate prices
-ProductSchema.pre("findOneAndUpdate", async function (next) {
+ProductSchema.pre("findOneAndUpdate", async function () {
   const update = this.getUpdate();
 
   // Convert category to lowercase if present
@@ -150,8 +150,6 @@ ProductSchema.pre("findOneAndUpdate", async function (next) {
     update.discountAmount = (price * discountPercent) / 100;
     update.finalPrice = price - update.discountAmount;
   }
-
-  next();
 });
 
 // Indexes for better query performance
