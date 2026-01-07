@@ -7,7 +7,8 @@ const SeasonalThemeSchema = new mongoose.Schema(
      type: String,
      required: true,
      unique: true,
-     enum: ["default", "christmas", "thanksgiving", "newyear", "dashain", "tihar", "holi"],
+     trim: true,
+     lowercase: true,
      index: true,
    },
    title: {
@@ -43,19 +44,22 @@ const SeasonalThemeSchema = new mongoose.Schema(
      primary: {
        type: String,
        required: true,
+       default: "",
      },
      secondary: {
        type: String,
        required: true,
+       default: "",
      },
      accent: {
        type: String,
        required: true,
+       default: "",
      },
    },
    gradient: {
      type: String,
-     required: true,
+     default: "",
    },
    emoji: {
      type: String,
