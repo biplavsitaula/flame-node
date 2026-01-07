@@ -31,9 +31,9 @@ const OrderSchema = new mongoose.Schema(
   {
     billNumber: {
       type: String,
-      required: true,
       unique: true,
       index: true,
+      trim: true,
     },
     customer: {
       fullName: {
@@ -108,10 +108,35 @@ const OrderSchema = new mongoose.Schema(
 
 // Pre-save middleware to generate bill number
 OrderSchema.pre("save", async function (next) {
-  if (!this.billNumber) {
-    const year = new Date().getFullYear();
-    const count = await mongoose.model("Order").countDocuments();
-    this.billNumber = `FB-${year}-${String(count + 1).padStart(3, "0")}`;
+  // Only generate billNumber for new documents that don't have one
+  if (this.isNew && !this.billNumber) {
+    try {
+      const currentYear = new Date().getFullYear();
+      
+      // Find the last order to get the highest bill number for this year
+      const lastOrder = await this.constructor.findOne(
+        { billNumber: { $regex: `^FB-${currentYear}-` } },
+        {},
+        { sort: { billNumber: -1 } }
+      );
+      
+      let nextBillNumber = 1;
+      
+      if (lastOrder && lastOrder.billNumber) {
+        // Extract the number from the last bill number (format: FB-YYYY-XXX)
+        const lastBillParts = lastOrder.billNumber.split("-");
+        if (lastBillParts.length === 3 && lastBillParts[2]) {
+          const lastNumber = parseInt(lastBillParts[2]);
+          if (!isNaN(lastNumber)) {
+            nextBillNumber = lastNumber + 1;
+          }
+        }
+      }
+      
+      this.billNumber = `FB-${currentYear}-${String(nextBillNumber).padStart(3, "0")}`;
+    } catch (error) {
+      return next(error);
+    }
   }
   next();
 });
@@ -122,6 +147,7 @@ OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ totalAmount: -1 });
 
 export default mongoose.model("Order", OrderSchema);
+
 
 
 
