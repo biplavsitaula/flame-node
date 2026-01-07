@@ -54,8 +54,9 @@ const SettingsSchema = new mongoose.Schema(
    // Theme setting
    theme: {
      type: String,
-     enum: ["default", "dashain", "tihar", "christmas", "holi", "newyear", "thanksgiving"],
      default: "default",
+     trim: true,
+     lowercase: true,
    },
  },
  {
