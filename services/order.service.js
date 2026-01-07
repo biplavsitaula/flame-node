@@ -113,9 +113,33 @@ export const createOrder = async (orderData) => {
   // Calculate total amount
   const totalAmount = subtotal + deliveryFee;
 
+  // Generate bill number if not provided
+  let billNumber = orderData.billNumber;
+  if (!billNumber) {
+    const currentYear = new Date().getFullYear();
+    const lastOrder = await Order.findOne(
+      { billNumber: { $regex: `^FB-${currentYear}-` } },
+      {},
+      { sort: { billNumber: -1 } }
+    );
+    
+    let nextBillNumber = 1;
+    if (lastOrder && lastOrder.billNumber) {
+      const lastBillParts = lastOrder.billNumber.split("-");
+      if (lastBillParts.length === 3 && lastBillParts[2]) {
+        const lastNumber = parseInt(lastBillParts[2]);
+        if (!isNaN(lastNumber)) {
+          nextBillNumber = lastNumber + 1;
+        }
+      }
+    }
+    billNumber = `FB-${currentYear}-${String(nextBillNumber).padStart(3, "0")}`;
+  }
+
   // Create order
   const order = new Order({
     ...orderData,
+    billNumber,
     items: itemsWithTotals,
     subtotal,
     deliveryFee,
@@ -227,8 +251,29 @@ export const checkout = async (checkoutData) => {
   // Calculate total amount
   const totalAmount = subtotal + deliveryFee;
 
+  // Generate bill number
+  const currentYear = new Date().getFullYear();
+  const lastOrder = await Order.findOne(
+    { billNumber: { $regex: `^FB-${currentYear}-` } },
+    {},
+    { sort: { billNumber: -1 } }
+  );
+  
+  let nextBillNumber = 1;
+  if (lastOrder && lastOrder.billNumber) {
+    const lastBillParts = lastOrder.billNumber.split("-");
+    if (lastBillParts.length === 3 && lastBillParts[2]) {
+      const lastNumber = parseInt(lastBillParts[2]);
+      if (!isNaN(lastNumber)) {
+        nextBillNumber = lastNumber + 1;
+      }
+    }
+  }
+  const billNumber = `FB-${currentYear}-${String(nextBillNumber).padStart(3, "0")}`;
+
   // Prepare order data
   const orderData = {
+    billNumber,
     customer: {
       fullName,
       mobile: phoneNumber,
@@ -341,6 +386,7 @@ export const updateOrderStatus = async (id, status) => {
 export const deleteOrder = async (id) => {
   return await Order.findByIdAndDelete(id);
 };
+
 
 
 
