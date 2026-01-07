@@ -342,8 +342,18 @@ export const checkout = async (checkoutData) => {
     .populate("items.productId", "name imageUrl")
     .lean();
 
+  // Format response with name and address
+  const formattedOrder = {
+    ...populatedOrder,
+    customer: {
+      ...populatedOrder.customer,
+      name: populatedOrder.customer.fullName,
+      address: populatedOrder.customer.location,
+    },
+  };
+
   return {
-    order: populatedOrder,
+    order: formattedOrder,
     payment: {
       _id: payment._id,
       billNumber: payment.billNumber,
