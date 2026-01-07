@@ -106,41 +106,8 @@ const OrderSchema = new mongoose.Schema(
   }
 );
 
-// Pre-save middleware to generate bill number (backup - service layer generates it)
-OrderSchema.pre("save", async function () {
-  // Only generate billNumber for new documents that don't have one
-  // This is a backup - the service layer should already set it
-  if (this.isNew && !this.billNumber) {
-    try {
-      const currentYear = new Date().getFullYear();
-      
-      // Find the last order to get the highest bill number for this year
-      const lastOrder = await this.constructor.findOne(
-        { billNumber: { $regex: `^FB-${currentYear}-` } },
-        {},
-        { sort: { billNumber: -1 } }
-      );
-      
-      let nextBillNumber = 1;
-      
-      if (lastOrder && lastOrder.billNumber) {
-        // Extract the number from the last bill number (format: FB-YYYY-XXX)
-        const lastBillParts = lastOrder.billNumber.split("-");
-        if (lastBillParts.length === 3 && lastBillParts[2]) {
-          const lastNumber = parseInt(lastBillParts[2]);
-          if (!isNaN(lastNumber)) {
-            nextBillNumber = lastNumber + 1;
-          }
-        }
-      }
-      
-      this.billNumber = `FB-${currentYear}-${String(nextBillNumber).padStart(3, "0")}`;
-    } catch (error) {
-      // If generation fails, throw error (Mongoose will handle it)
-      throw error;
-    }
-  }
-});
+// Note: billNumber is generated in the service layer (order.service.js)
+// No pre-save hook needed to avoid "next is not a function" errors
 
 // Indexes
 OrderSchema.index({ "customer.fullName": "text", "customer.location": "text", billNumber: "text" });
