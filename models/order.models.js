@@ -106,9 +106,10 @@ const OrderSchema = new mongoose.Schema(
   }
 );
 
-// Pre-save middleware to generate bill number
-OrderSchema.pre("save", async function (next) {
+// Pre-save middleware to generate bill number (backup - service layer generates it)
+OrderSchema.pre("save", async function () {
   // Only generate billNumber for new documents that don't have one
+  // This is a backup - the service layer should already set it
   if (this.isNew && !this.billNumber) {
     try {
       const currentYear = new Date().getFullYear();
@@ -135,10 +136,10 @@ OrderSchema.pre("save", async function (next) {
       
       this.billNumber = `FB-${currentYear}-${String(nextBillNumber).padStart(3, "0")}`;
     } catch (error) {
-      return next(error);
+      // If generation fails, throw error (Mongoose will handle it)
+      throw error;
     }
   }
-  next();
 });
 
 // Indexes
