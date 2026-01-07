@@ -23,7 +23,7 @@ const seedPayments = async () => {
 
     for (const order of orders) {
       const status =
-        order.paymentMethod === "QR Payment"
+        order.paymentMethod === "Online"
           ? "completed"
           : order.status === "completed"
           ? "completed"
@@ -40,11 +40,15 @@ const seedPayments = async () => {
         },
         amount: order.totalAmount,
         method: order.paymentMethod,
+        gateway: order.paymentGateway || null,
         status,
         transactionId:
-          order.paymentMethod === "QR Payment"
+          order.paymentMethod === "Online"
             ? `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`
             : null,
+        notes: order.paymentMethod === "Online" 
+          ? `Paid via ${order.paymentGateway}` 
+          : "Cash on Delivery",
         createdAt: order.createdAt,
         updatedAt: order.updatedAt,
       });

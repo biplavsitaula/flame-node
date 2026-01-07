@@ -124,12 +124,16 @@ export const getProductById = async (id) => {
 };
 
 export const createProduct = async (productData) => {
-  // Calculate discount and final price if not provided
-  if (productData.price && productData.discountPercent !== undefined) {
-    productData.discountAmount =
-      (productData.price * productData.discountPercent) / 100;
-    productData.finalPrice = productData.price - productData.discountAmount;
+  // Convert category to lowercase if provided
+  if (productData.category) {
+    productData.category = productData.category.toLowerCase();
   }
+
+  // Calculate discount and final price
+  const price = productData.price || 0;
+  const discountPercent = productData.discountPercent || 0;
+  productData.discountAmount = (price * discountPercent) / 100;
+  productData.finalPrice = price - productData.discountAmount;
 
   const product = new Product(productData);
   const savedProduct = await product.save();
@@ -144,17 +148,24 @@ export const createProduct = async (productData) => {
 };
 
 export const updateProduct = async (id, productData) => {
-  // Recalculate discount if price or discountPercent changed
-  if (productData.price || productData.discountPercent !== undefined) {
-    const existingProduct = await Product.findById(id);
-    const price = productData.price || existingProduct.price;
-    const discountPercent =
-      productData.discountPercent !== undefined
-        ? productData.discountPercent
-        : existingProduct.discountPercent;
+  // Convert category to lowercase if provided
+  if (productData.category) {
+    productData.category = productData.category.toLowerCase();
+  }
 
-    productData.discountAmount = (price * discountPercent) / 100;
-    productData.finalPrice = price - productData.discountAmount;
+  // Recalculate discount if price or discountPercent changed
+  if (productData.price !== undefined || productData.discountPercent !== undefined) {
+    const existingProduct = await Product.findById(id);
+    if (existingProduct) {
+      const price = productData.price !== undefined ? productData.price : existingProduct.price;
+      const discountPercent =
+        productData.discountPercent !== undefined
+          ? productData.discountPercent
+          : existingProduct.discountPercent || 0;
+
+      productData.discountAmount = (price * discountPercent) / 100;
+      productData.finalPrice = price - productData.discountAmount;
+    }
   }
 
   const updatedProduct = await Product.findByIdAndUpdate(id, productData, {

@@ -5,6 +5,7 @@ import {
   createOrder,
   updateOrderStatus,
   deleteOrder,
+  checkout,
 } from "../services/order.service.js";
 
 export const fetchAllOrders = async (req, res) => {
@@ -134,6 +135,26 @@ export const deleteOrderById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Error deleting order",
+    });
+  }
+};
+
+/**
+ * POST /checkout
+ * Public endpoint for customers to place orders
+ */
+export const processCheckout = async (req, res) => {
+  try {
+    const result = await checkout(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Order placed successfully",
+      data: result,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error processing checkout",
     });
   }
 };

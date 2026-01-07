@@ -30,23 +30,32 @@ export const fetchAllSeasonalThemes = async (req, res) => {
 
 
 /**
-* GET /seasonal-themes/current
-* Fetch the current seasonal theme based on user's settings selection
-*/
+ * GET /seasonal-themes/current
+ * Fetch the current seasonal theme based on user's settings selection
+ * Returns all theme attributes directly
+ */
 export const fetchCurrentSeasonalTheme = async (req, res) => {
- try {
-   const result = await getCurrentSeasonalTheme();
-   res.status(200).json({
-     success: true,
-     message: "Current seasonal theme fetched successfully",
-     data: result,
-   });
- } catch (error) {
-   res.status(500).json({
-     success: false,
-     message: error.message || "Error fetching current seasonal theme",
-   });
- }
+  try {
+    const theme = await getCurrentSeasonalTheme();
+    
+    if (!theme) {
+      return res.status(404).json({
+        success: false,
+        message: "No seasonal theme found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Current seasonal theme fetched successfully",
+      data: theme,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error fetching current seasonal theme",
+    });
+  }
 };
 
 

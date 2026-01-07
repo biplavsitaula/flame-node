@@ -70,7 +70,8 @@ const seedOrders = async () => {
       },
     ];
 
-    const paymentMethods = ["QR Payment", "COD"];
+    const paymentMethods = ["COD", "Online"];
+    const paymentGateways = ["esewa", "khalti", "card"];
     const statuses = ["placed", "in-progress", "delivered", "completed"];
 
     const orders = [];
@@ -84,6 +85,9 @@ const seedOrders = async () => {
       const customer = customers[Math.floor(Math.random() * customers.length)];
       const paymentMethod =
         paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
+      const paymentGateway = paymentMethod === "Online" 
+        ? paymentGateways[Math.floor(Math.random() * paymentGateways.length)]
+        : null;
       const status = statuses[Math.floor(Math.random() * statuses.length)];
 
       // Random number of items (1-3)
@@ -109,10 +113,14 @@ const seedOrders = async () => {
         });
       }
 
-      const totalAmount = selectedProducts.reduce(
+      const subtotal = selectedProducts.reduce(
         (sum, item) => sum + item.total,
         0
       );
+
+      // Calculate delivery fee (free if subtotal >= 2000)
+      const deliveryFee = subtotal >= 2000 ? 0 : 500;
+      const totalAmount = subtotal + deliveryFee;
 
       // Random date within last 30 days
       const daysAgo = Math.floor(Math.random() * 30);
@@ -131,10 +139,13 @@ const seedOrders = async () => {
         billNumber,
         customer,
         items: selectedProducts,
+        subtotal: Math.round(subtotal * 100) / 100,
+        deliveryFee,
         totalAmount: Math.round(totalAmount * 100) / 100,
         status,
         paymentMethod,
-        paymentStatus: paymentMethod === "QR Payment" ? "completed" : status === "completed" ? "completed" : "pending",
+        paymentGateway,
+        paymentStatus: paymentMethod === "Online" ? "completed" : status === "completed" ? "completed" : "pending",
         createdAt,
         updatedAt: createdAt,
       });

@@ -1,5 +1,19 @@
 import mongoose from "mongoose";
 
+// Valid categories (lowercase)
+const validCategories = [
+  "whiskey",
+  "vodka",
+  "rum",
+  "gin",
+  "tequila",
+  "cognac",
+  "champagne",
+  "wine",
+  "beer",
+  "brandy",
+];
+
 const ProductSchema = new mongoose.Schema(
   {
     name: {
@@ -11,21 +25,15 @@ const ProductSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, "Category is required"],
-      enum: [
-        "Whiskey",
-        "Vodka",
-        "Rum",
-        "Gin",
-        "Tequila",
-        "Cognac",
-        "Champagne",
-        "Wine",
-        "Beer",
-        "Brandy",
-        
-      ],
-      lowercase: true,
       index: true,
+      set: (v) => (v ? v.toLowerCase() : v), // Convert to lowercase on set
+      validate: {
+        validator: function (v) {
+          return validCategories.includes(v?.toLowerCase());
+        },
+        message: (props) =>
+          `${props.value} is not a valid category. Valid categories: ${validCategories.join(", ")}`,
+      },
     },
     brand: {
       type: String,
@@ -49,7 +57,7 @@ const ProductSchema = new mongoose.Schema(
     },
     finalPrice: {
       type: Number,
-      required: true,
+      default: 0,
       min: [0, "Final price must be positive"],
     },
     stock: {
@@ -76,7 +84,8 @@ const ProductSchema = new mongoose.Schema(
     },
     imageUrl: {
       type: String,
-      required: [true, "Image URL is required"],
+      default: "",
+      trim: true,
     },
     isRecommended: {
       type: Boolean,
@@ -110,10 +119,38 @@ ProductSchema.virtual("status").get(function () {
 
 // Pre-save middleware to calculate discount and final price
 ProductSchema.pre("save", function (next) {
-  if (this.isModified("price") || this.isModified("discountPercent")) {
-    this.discountAmount = (this.price * this.discountPercent) / 100;
+  // Always calculate finalPrice if price exists
+  if (this.price !== undefined) {
+    const discountPercent = this.discountPercent || 0;
+    this.discountAmount = (this.price * discountPercent) / 100;
     this.finalPrice = this.price - this.discountAmount;
   }
+  next();
+});
+
+// Pre-findOneAndUpdate middleware to handle category and calculate prices
+ProductSchema.pre("findOneAndUpdate", async function (next) {
+  const update = this.getUpdate();
+
+  // Convert category to lowercase if present
+  if (update.category) {
+    update.category = update.category.toLowerCase();
+  }
+
+  // Calculate finalPrice if price or discountPercent is being updated
+  if (update.price !== undefined || update.discountPercent !== undefined) {
+    // Get existing document to fill in missing values
+    const doc = await this.model.findOne(this.getQuery());
+    const price = update.price !== undefined ? update.price : doc?.price || 0;
+    const discountPercent =
+      update.discountPercent !== undefined
+        ? update.discountPercent
+        : doc?.discountPercent || 0;
+
+    update.discountAmount = (price * discountPercent) / 100;
+    update.finalPrice = price - update.discountAmount;
+  }
+
   next();
 });
 

@@ -31,9 +31,14 @@ const PaymentSchema = new mongoose.Schema(
     },
     method: {
       type: String,
-      enum: ["QR Payment", "COD"],
+      enum: ["COD", "Online"],
       required: [true, "Payment method is required"],
       index: true,
+    },
+    gateway: {
+      type: String,
+      enum: ["esewa", "khalti", "card", null],
+      default: null,
     },
     status: {
       type: String,

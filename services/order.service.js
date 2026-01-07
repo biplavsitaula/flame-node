@@ -95,22 +95,30 @@ export const createOrder = async (orderData) => {
       const price = product.finalPrice || product.price;
       return {
         ...item,
+        name: item.name || product.name,
         price,
         total: price * item.quantity,
       };
     })
   );
 
+  // Calculate subtotal
+  const subtotal = itemsWithTotals.reduce((sum, item) => sum + item.total, 0);
+
+  // Calculate delivery fee (free if subtotal >= 2000)
+  const deliveryFee = orderData.deliveryFee !== undefined 
+    ? orderData.deliveryFee 
+    : (subtotal >= 2000 ? 0 : 500);
+
   // Calculate total amount
-  const totalAmount = itemsWithTotals.reduce(
-    (sum, item) => sum + item.total,
-    0
-  );
+  const totalAmount = subtotal + deliveryFee;
 
   // Create order
   const order = new Order({
     ...orderData,
     items: itemsWithTotals,
+    subtotal,
+    deliveryFee,
     totalAmount,
   });
 
@@ -133,6 +141,7 @@ export const createOrder = async (orderData) => {
     },
     amount: savedOrder.totalAmount,
     method: savedOrder.paymentMethod,
+    gateway: savedOrder.paymentGateway || null,
     status: savedOrder.paymentMethod === "COD" ? "pending" : "completed",
   });
 
@@ -149,6 +158,156 @@ export const createOrder = async (orderData) => {
   return await Order.findById(savedOrder._id)
     .populate("items.productId", "name imageUrl")
     .lean();
+};
+
+/**
+ * Checkout - Create order from cart (public endpoint for customers)
+ */
+export const checkout = async (checkoutData) => {
+  const {
+    fullName,
+    phoneNumber,
+    deliveryAddress,
+    paymentMethod, // "cod" or "online"
+    paymentGateway, // "esewa", "khalti", "card" (required if online)
+    items, // Array of { productId, quantity }
+  } = checkoutData;
+
+  // Validate required fields
+  if (!fullName || !phoneNumber || !deliveryAddress) {
+    throw new Error("Full name, phone number, and delivery address are required");
+  }
+
+  if (!items || items.length === 0) {
+    throw new Error("Cart is empty");
+  }
+
+  if (!paymentMethod) {
+    throw new Error("Payment method is required");
+  }
+
+  if (paymentMethod === "online" && !paymentGateway) {
+    throw new Error("Payment gateway is required for online payment");
+  }
+
+  // Validate products and check stock
+  for (const item of items) {
+    const product = await Product.findById(item.productId);
+    if (!product) {
+      throw new Error(`Product not found`);
+    }
+    if (product.stock < item.quantity) {
+      throw new Error(
+        `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
+      );
+    }
+  }
+
+  // Build items with totals
+  const itemsWithTotals = await Promise.all(
+    items.map(async (item) => {
+      const product = await Product.findById(item.productId);
+      const price = product.finalPrice || product.price;
+      return {
+        productId: item.productId,
+        name: product.name,
+        quantity: item.quantity,
+        price,
+        total: price * item.quantity,
+      };
+    })
+  );
+
+  // Calculate subtotal
+  const subtotal = itemsWithTotals.reduce((sum, item) => sum + item.total, 0);
+
+  // Calculate delivery fee (free if subtotal >= 2000)
+  const deliveryFee = subtotal >= 2000 ? 0 : 500;
+
+  // Calculate total amount
+  const totalAmount = subtotal + deliveryFee;
+
+  // Prepare order data
+  const orderData = {
+    customer: {
+      fullName,
+      mobile: phoneNumber,
+      location: deliveryAddress,
+    },
+    items: itemsWithTotals,
+    subtotal,
+    deliveryFee,
+    totalAmount,
+    paymentMethod: paymentMethod === "cod" ? "COD" : "Online",
+    paymentGateway: paymentMethod === "online" ? paymentGateway : null,
+    paymentStatus: paymentMethod === "online" ? "completed" : "pending",
+    status: "placed",
+  };
+
+  // Create order
+  const order = new Order(orderData);
+  const savedOrder = await order.save();
+
+  // Update product stock and sales
+  for (const item of itemsWithTotals) {
+    await Product.findByIdAndUpdate(item.productId, {
+      $inc: { stock: -item.quantity, totalSold: item.quantity },
+    });
+  }
+
+  // Create payment record
+  const payment = await Payment.create({
+    orderId: savedOrder._id,
+    billNumber: savedOrder.billNumber,
+    customer: {
+      fullName: savedOrder.customer.fullName,
+      mobile: savedOrder.customer.mobile,
+    },
+    amount: savedOrder.totalAmount,
+    method: savedOrder.paymentMethod,
+    gateway: savedOrder.paymentGateway,
+    status: savedOrder.paymentStatus,
+    notes: paymentMethod === "online" 
+      ? `Paid via ${paymentGateway}` 
+      : "Cash on Delivery",
+  });
+
+  // Create notification for admin
+  await Notification.create({
+    type: "New Order",
+    title: "New Order Received",
+    message: `New order ${savedOrder.billNumber} from ${savedOrder.customer.fullName} - Rs. ${savedOrder.totalAmount.toLocaleString()}`,
+    relatedId: savedOrder._id,
+    relatedModel: "Order",
+    priority: "high",
+  });
+
+  // Create payment notification
+  await Notification.create({
+    type: "New Payment",
+    title: paymentMethod === "online" ? "Online Payment Received" : "COD Order Placed",
+    message: `Payment of Rs. ${savedOrder.totalAmount.toLocaleString()} via ${savedOrder.paymentMethod}${savedOrder.paymentGateway ? ` (${savedOrder.paymentGateway})` : ""}`,
+    relatedId: payment._id,
+    relatedModel: "Payment",
+    priority: paymentMethod === "online" ? "high" : "medium",
+  });
+
+  // Return populated order
+  const populatedOrder = await Order.findById(savedOrder._id)
+    .populate("items.productId", "name imageUrl")
+    .lean();
+
+  return {
+    order: populatedOrder,
+    payment: {
+      _id: payment._id,
+      billNumber: payment.billNumber,
+      amount: payment.amount,
+      method: payment.method,
+      gateway: payment.gateway,
+      status: payment.status,
+    },
+  };
 };
 
 export const updateOrderStatus = async (id, status) => {

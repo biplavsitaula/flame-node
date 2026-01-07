@@ -64,6 +64,16 @@ const OrderSchema = new mongoose.Schema(
         message: "Order must have at least one item",
       },
     },
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     totalAmount: {
       type: Number,
       required: true,
@@ -77,8 +87,13 @@ const OrderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["QR Payment", "COD"],
+      enum: ["COD", "Online"],
       required: true,
+    },
+    paymentGateway: {
+      type: String,
+      enum: ["esewa", "khalti", "card", null],
+      default: null,
     },
     paymentStatus: {
       type: String,
