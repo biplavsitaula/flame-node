@@ -21,6 +21,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 312,
     reviewCount: 234,
+    tag: "New",
   },
   {
     name: "Moet & Chandon",
@@ -36,6 +37,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 198,
     reviewCount: 167,
+    tag: "Best",
   },
   
   // Low Stock Products (for Stock Alerts - going out of stock soon)
@@ -53,6 +55,7 @@ const productsData = [
     isRecommended: true,
     totalSold: 45,
     reviewCount: 98,
+    tag: "New",
   },
   {
     name: "Macallan 18 Year",
@@ -68,6 +71,7 @@ const productsData = [
     isRecommended: true,
     totalSold: 34,
     reviewCount: 89,
+    tag: "Best",
   },
   {
     name: "Chivas Regal 18",
@@ -83,6 +87,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 78,
     reviewCount: 92,
+    tag: "Super",
   },
   {
     name: "Patron Silver",
@@ -98,6 +103,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 112,
     reviewCount: 134,
+    tag: "Super",
   },
   
   // Top Sellers (High Sales)
@@ -115,6 +121,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 567,
     reviewCount: 456,
+    tag: "Try",
   },
   {
     name: "Bombay Sapphire",
@@ -130,6 +137,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 423,
     reviewCount: 312,
+    tag: "Try",
   },
   
   // Recommended Products (High Rating + Recommended)
@@ -147,6 +155,7 @@ const productsData = [
     isRecommended: true,
     totalSold: 156,
     reviewCount: 187,
+    tag: "Try",
   },
   {
     name: "Johnnie Walker Blue Label",
@@ -162,6 +171,7 @@ const productsData = [
     isRecommended: true,
     totalSold: 89,
     reviewCount: 156,
+    tag: "Try",
   },
   {
     name: "Dom Perignon",
@@ -177,6 +187,7 @@ const productsData = [
     isRecommended: true,
     totalSold: 67,
     reviewCount: 89,
+    tag: "Nice",
   },
   {
     name: "Glenfiddich 21 Year",
@@ -192,6 +203,7 @@ const productsData = [
     isRecommended: true,
     totalSold: 56,
     reviewCount: 78,
+    tag: "Nice",
   },
   
   // Products with Various Discounts/Offers
@@ -209,6 +221,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 234,
     reviewCount: 189,
+    tag: "Try",
   },
   {
     name: "Absolut Vodka",
@@ -224,6 +237,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 178,
     reviewCount: 145,
+    tag: "Try",
   },
   {
     name: "Bacardi Superior",
@@ -239,6 +253,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 298,
     reviewCount: 201,
+    tag: "Try",
   },
   {
     name: "Tanqueray London Dry",
@@ -254,6 +269,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 156,
     reviewCount: 123,
+    tag: "Try",
   },
   {
     name: "Jameson Irish Whiskey",
@@ -269,6 +285,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 201,
     reviewCount: 167,
+    tag: "Try",
   },
   {
     name: "Ketel One Vodka",
@@ -284,6 +301,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 134,
     reviewCount: 98,
+    tag: "Try",
   },
   {
     name: "Ciroc Vodka",
@@ -299,6 +317,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 98,
     reviewCount: 76,
+    tag: "Try",
   },
   {
     name: "Remy Martin VSOP",
@@ -314,6 +333,7 @@ const productsData = [
     isRecommended: false,
     totalSold: 87,
     reviewCount: 112,
+    tag: "Try",
   },
 ];
 
