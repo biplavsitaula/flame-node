@@ -118,14 +118,13 @@ ProductSchema.virtual("status").get(function () {
 });
 
 // Pre-save middleware to calculate discount and final price
-ProductSchema.pre("save", function (next) {
+ProductSchema.pre("save", function () {
   // Always calculate finalPrice if price exists
   if (this.price !== undefined) {
     const discountPercent = this.discountPercent || 0;
     this.discountAmount = (this.price * discountPercent) / 100;
     this.finalPrice = this.price - this.discountAmount;
   }
-  next();
 });
 
 // Pre-findOneAndUpdate middleware to handle category and calculate prices
