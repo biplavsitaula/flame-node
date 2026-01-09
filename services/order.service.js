@@ -2,6 +2,7 @@ import Order from "../models/order.models.js";
 import Product from "../models/product.models.js";
 import Payment from "../models/payment.models.js";
 import Notification from "../models/notification.models.js";
+import Inventory from "../models/inventory.model.js";
 
 export const getAllOrders = async (query = {}) => {
   const {
@@ -43,7 +44,7 @@ export const getAllOrders = async (query = {}) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const orders = await Order.find(filter)
-    .populate("items.productId", "name imageUrl")
+    .populate("items.productId", "name imageUrl category stock price finalPrice")
     .sort(sortOptions)
     .skip(skip)
     .limit(parseInt(limit))
@@ -64,13 +65,13 @@ export const getAllOrders = async (query = {}) => {
 
 export const getOrderById = async (id) => {
   return await Order.findById(id)
-    .populate("items.productId", "name imageUrl category price")
+    .populate("items.productId", "name imageUrl category price finalPrice stock")
     .lean();
 };
 
 export const getOrderByBillNumber = async (billNumber) => {
   return await Order.findOne({ billNumber })
-    .populate("items.productId", "name imageUrl category price")
+    .populate("items.productId", "name imageUrl category price finalPrice stock")
     .lean();
 };
 
@@ -148,11 +149,49 @@ export const createOrder = async (orderData) => {
 
   const savedOrder = await order.save();
 
-  // Update product stock and sales
+  // Update product stock and sales, create inventory transactions
   for (const item of itemsWithTotals) {
+    const product = await Product.findById(item.productId);
+    const previousStock = product.stock;
+    const newStock = previousStock - item.quantity;
+
+    // Update product stock
     await Product.findByIdAndUpdate(item.productId, {
       $inc: { stock: -item.quantity, totalSold: item.quantity },
     });
+
+    // Create inventory transaction record
+    await Inventory.create({
+      productId: item.productId,
+      productName: item.name,
+      type: "remove",
+      quantity: item.quantity,
+      previousStock,
+      newStock,
+      reason: `Sold via Order ${savedOrder.billNumber}`,
+      notes: `Customer: ${savedOrder.customer.fullName}`,
+    });
+
+    // Create low stock alert if needed
+    if (newStock > 0 && newStock < 10) {
+      await Notification.create({
+        type: "Low Stock Alert",
+        title: "Low Stock Alert",
+        message: `${item.name} is running low. Only ${newStock} units remaining.`,
+        relatedId: item.productId,
+        relatedModel: "Product",
+        priority: "high",
+      });
+    } else if (newStock === 0) {
+      await Notification.create({
+        type: "Low Stock Alert",
+        title: "Out of Stock",
+        message: `${item.name} is now OUT OF STOCK.`,
+        relatedId: item.productId,
+        relatedModel: "Product",
+        priority: "high",
+      });
+    }
   }
 
   // Create payment record
@@ -180,7 +219,7 @@ export const createOrder = async (orderData) => {
   });
 
   return await Order.findById(savedOrder._id)
-    .populate("items.productId", "name imageUrl")
+    .populate("items.productId", "name imageUrl category stock")
     .lean();
 };
 
@@ -293,11 +332,49 @@ export const checkout = async (checkoutData) => {
   const order = new Order(orderData);
   const savedOrder = await order.save();
 
-  // Update product stock and sales
+  // Update product stock and sales, create inventory transactions
   for (const item of itemsWithTotals) {
+    const product = await Product.findById(item.productId);
+    const previousStock = product.stock;
+    const newStock = previousStock - item.quantity;
+
+    // Update product stock
     await Product.findByIdAndUpdate(item.productId, {
       $inc: { stock: -item.quantity, totalSold: item.quantity },
     });
+
+    // Create inventory transaction record
+    await Inventory.create({
+      productId: item.productId,
+      productName: item.name,
+      type: "remove",
+      quantity: item.quantity,
+      previousStock,
+      newStock,
+      reason: `Sold via Checkout ${savedOrder.billNumber}`,
+      notes: `Customer: ${savedOrder.customer.fullName}`,
+    });
+
+    // Create low stock alert if needed
+    if (newStock > 0 && newStock < 10) {
+      await Notification.create({
+        type: "Low Stock Alert",
+        title: "Low Stock Alert",
+        message: `${item.name} is running low. Only ${newStock} units remaining.`,
+        relatedId: item.productId,
+        relatedModel: "Product",
+        priority: "high",
+      });
+    } else if (newStock === 0) {
+      await Notification.create({
+        type: "Low Stock Alert",
+        title: "Out of Stock",
+        message: `${item.name} is now OUT OF STOCK.`,
+        relatedId: item.productId,
+        relatedModel: "Product",
+        priority: "high",
+      });
+    }
   }
 
   // Create payment record
@@ -339,7 +416,7 @@ export const checkout = async (checkoutData) => {
 
   // Return populated order
   const populatedOrder = await Order.findById(savedOrder._id)
-    .populate("items.productId", "name imageUrl")
+    .populate("items.productId", "name imageUrl category stock")
     .lean();
 
   // Format response with name and address
@@ -376,7 +453,7 @@ export const updateOrderStatus = async (id, status) => {
     { status },
     { new: true, runValidators: true }
   )
-    .populate("items.productId", "name imageUrl")
+    .populate("items.productId", "name imageUrl category stock")
     .lean();
 
   if (!order) return null;
