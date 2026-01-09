@@ -17,6 +17,7 @@ import notificationRoutes from "./routes/notification.route.js";
 import exportRoutes from "./routes/export.route.js";
 import settingsRoutes from "./routes/settings.route.js";
 import seasonalThemeRoutes from "./routes/seasonalTheme.route.js";
+import inventoryRoutes from "./routes/inventory.route.js";
 
 
 dotenv.config();
@@ -60,6 +61,7 @@ app.use("/api", notificationRoutes);
 app.use("/api", exportRoutes);
 app.use("/api", settingsRoutes);
 app.use("/api", seasonalThemeRoutes);
+app.use("/api", inventoryRoutes);
 
 
 // 404 handler
