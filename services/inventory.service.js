@@ -31,16 +31,36 @@ export const getAllInventoryTransactions = async (query = {}) => {
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const transactions = await Inventory.find(filter)
-    .populate("productId", "name imageUrl category")
+    .populate("productId", "name imageUrl category stock")
     .sort(sortOptions)
     .skip(skip)
     .limit(parseInt(limit))
     .lean();
 
+  // Add current stock to each transaction
+  const transactionsWithCurrentStock = transactions.map((transaction) => ({
+    ...transaction,
+    currentStock: transaction.productId?.stock ?? 0,
+  }));
+
   const total = await Inventory.countDocuments(filter);
 
+  // Calculate summary stats
+  const allTransactions = await Inventory.find(filter).lean();
+  const totalAdded = allTransactions
+    .filter((t) => t.type === "add")
+    .reduce((sum, t) => sum + t.quantity, 0);
+  const totalRemoved = allTransactions
+    .filter((t) => t.type === "remove")
+    .reduce((sum, t) => sum + t.quantity, 0);
+
   return {
-    transactions,
+    transactions: transactionsWithCurrentStock,
+    summary: {
+      totalAdded,
+      totalRemoved,
+      totalTransactions: total,
+    },
     pagination: {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -223,5 +243,6 @@ export const getProductStockHistory = async (productId) => {
     transactions,
   };
 };
+
 
 

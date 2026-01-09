@@ -17,6 +17,7 @@ export const fetchAllInventoryTransactions = async (req, res) => {
       success: true,
       message: "Inventory transactions fetched successfully",
       data: result.transactions,
+      summary: result.summary,
       pagination: result.pagination,
     });
   } catch (error) {
@@ -116,5 +117,6 @@ export const removeBulkStock = async (req, res) => {
     });
   }
 };
+
 
 
