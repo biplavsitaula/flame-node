@@ -124,6 +124,18 @@ export const getProductById = async (id) => {
 };
 
 export const createProduct = async (productData) => {
+  // Map 'type' to 'category' if 'type' is provided but 'category' is not
+  if (productData.type && !productData.category) {
+    productData.category = productData.type;
+    delete productData.type;
+  }
+
+  // Map 'image' to 'imageUrl' if 'image' is provided but 'imageUrl' is not
+  if (productData.image !== undefined && productData.imageUrl === undefined) {
+    productData.imageUrl = productData.image;
+    delete productData.image;
+  }
+
   // Convert category to lowercase if provided
   if (productData.category) {
     productData.category = productData.category.toLowerCase();
@@ -148,6 +160,18 @@ export const createProduct = async (productData) => {
 };
 
 export const updateProduct = async (id, productData) => {
+  // Map 'type' to 'category' if 'type' is provided but 'category' is not
+  if (productData.type && !productData.category) {
+    productData.category = productData.type;
+    delete productData.type;
+  }
+
+  // Map 'image' to 'imageUrl' if 'image' is provided but 'imageUrl' is not
+  if (productData.image !== undefined && productData.imageUrl === undefined) {
+    productData.imageUrl = productData.image;
+    delete productData.image;
+  }
+
   // Convert category to lowercase if provided
   if (productData.category) {
     productData.category = productData.category.toLowerCase();
