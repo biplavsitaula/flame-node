@@ -1,0 +1,26 @@
+# Development Dockerfile for flame-node backend
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies for nodemon)
+RUN npm ci
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 5000
+
+# Set environment to development
+ENV NODE_ENV=development
+
+# Start with nodemon for hot reload
+CMD ["npm", "run", "dev"]
