@@ -48,6 +48,7 @@ export const authenticate = async (req, res, next) => {
     req.user = {
       userId: user._id,
       email: user.email,
+      role: user.role,
     };
 
     next();
@@ -71,9 +72,91 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
+// Check if user is super_admin (can perform CRUD operations)
+export const checkSuperAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
 
+  if (req.user.role !== "super_admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Super admin privileges required.",
+    });
+  }
 
+  next();
+};
 
+// Check if user is admin or super_admin (can view, but only super_admin can modify)
+export const checkAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
+  if (req.user.role !== "admin" && req.user.role !== "super_admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Admin privileges required.",
+    });
+  }
+
+  next();
+};
+
+// Check if user is admin (view only, cannot modify)
+export const checkAdminViewOnly = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
+  if (req.user.role !== "admin" && req.user.role !== "super_admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Admin privileges required.",
+    });
+  }
+
+  // Allow GET requests for admin, but block POST/PUT/DELETE unless super_admin
+  const method = req.method.toUpperCase();
+  if (method !== "GET" && req.user.role !== "super_admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Only super admin can perform this action.",
+    });
+  }
+
+  next();
+};
+
+// Check if user has any valid role (super_admin, admin, or user)
+export const checkAnyRole = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+  }
+
+  const validRoles = ["super_admin", "admin", "user"];
+  if (!validRoles.includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Invalid user role.",
+    });
+  }
+
+  next();
+};
 
 
 

@@ -7,8 +7,10 @@ import {
   updateOrder,
   deleteOrderById,
   processCheckout,
+  acceptOrderController,
+  rejectOrderController,
 } from "../controller/order.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { authenticate, checkSuperAdmin, checkAdminViewOnly } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -20,10 +22,14 @@ router.get("/orders/bill/:billNumber", fetchOrderByBillNumber);
 // Checkout route (public - for customers)
 router.post("/checkout", processCheckout);
 
-// Protected routes (admin)
-router.post("/orders", authenticate, createNewOrder);
-router.put("/orders/:id", authenticate, updateOrder);
-router.delete("/orders/:id", authenticate, deleteOrderById);
+// Protected routes - Modify (super_admin only)
+router.post("/orders", authenticate, checkSuperAdmin, createNewOrder);
+router.put("/orders/:id", authenticate, checkSuperAdmin, updateOrder);
+router.delete("/orders/:id", authenticate, checkSuperAdmin, deleteOrderById);
+
+// Order acceptance/rejection (super_admin only)
+router.post("/orders/:id/accept", authenticate, checkSuperAdmin, acceptOrderController);
+router.post("/orders/:id/reject", authenticate, checkSuperAdmin, rejectOrderController);
 
 export default router;
 

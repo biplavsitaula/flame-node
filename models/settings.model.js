@@ -58,6 +58,33 @@ const SettingsSchema = new mongoose.Schema(
      trim: true,
      lowercase: true,
    },
+
+   // Product categories (dynamic list)
+   productCategories: {
+     type: [String],
+     default: [
+       "whiskey",
+       "vodka",
+       "rum",
+       "gin",
+       "tequila",
+       "cognac",
+       "champagne",
+       "wine",
+       "beer",
+       "brandy",
+       "cold drinks",
+       "juices",
+     ],
+     validate: {
+       validator: function (categories) {
+         // Ensure all categories are lowercase and unique
+         const uniqueCategories = [...new Set(categories.map(cat => cat.toLowerCase().trim()))];
+         return uniqueCategories.length === categories.length;
+       },
+       message: "Categories must be unique",
+     },
+   },
  },
  {
    timestamps: true,

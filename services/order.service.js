@@ -310,7 +310,7 @@ export const checkout = async (checkoutData) => {
   }
   const billNumber = `FB-${currentYear}-${String(nextBillNumber).padStart(3, "0")}`;
 
-  // Prepare order data
+  // Prepare order data - set status to "pending" (requires admin acceptance)
   const orderData = {
     billNumber,
     customer: {
@@ -325,57 +325,15 @@ export const checkout = async (checkoutData) => {
     paymentMethod: paymentMethod === "cod" ? "COD" : "Online",
     paymentGateway: paymentMethod === "online" ? paymentGateway : null,
     paymentStatus: paymentMethod === "online" ? "completed" : "pending",
-    status: "placed",
+    status: "pending", // Changed from "placed" to "pending" - requires admin acceptance
   };
 
   // Create order
   const order = new Order(orderData);
   const savedOrder = await order.save();
 
-  // Update product stock and sales, create inventory transactions
-  for (const item of itemsWithTotals) {
-    const product = await Product.findById(item.productId);
-    const previousStock = product.stock;
-    const newStock = previousStock - item.quantity;
-
-    // Update product stock
-    await Product.findByIdAndUpdate(item.productId, {
-      $inc: { stock: -item.quantity, totalSold: item.quantity },
-    });
-
-    // Create inventory transaction record
-    await Inventory.create({
-      productId: item.productId,
-      productName: item.name,
-      type: "remove",
-      quantity: item.quantity,
-      previousStock,
-      newStock,
-      reason: `Sold via Checkout ${savedOrder.billNumber}`,
-      notes: `Customer: ${savedOrder.customer.fullName}`,
-    });
-
-    // Create low stock alert if needed
-    if (newStock > 0 && newStock < 10) {
-      await Notification.create({
-        type: "Low Stock Alert",
-        title: "Low Stock Alert",
-        message: `${item.name} is running low. Only ${newStock} units remaining.`,
-        relatedId: item.productId,
-        relatedModel: "Product",
-        priority: "high",
-      });
-    } else if (newStock === 0) {
-      await Notification.create({
-        type: "Low Stock Alert",
-        title: "Out of Stock",
-        message: `${item.name} is now OUT OF STOCK.`,
-        relatedId: item.productId,
-        relatedModel: "Product",
-        priority: "high",
-      });
-    }
-  }
+  // DO NOT update stock here - stock will be updated only when order is accepted
+  // This prevents stock from being reserved before admin approval
 
   // Create payment record
   const payment = await Payment.create({
@@ -394,11 +352,11 @@ export const checkout = async (checkoutData) => {
       : "Cash on Delivery",
   });
 
-  // Create notification for admin
+  // Create notification for admin - order needs approval
   await Notification.create({
     type: "New Order",
-    title: "New Order Received",
-    message: `New order ${savedOrder.billNumber} from ${savedOrder.customer.fullName} - Rs. ${savedOrder.totalAmount.toLocaleString()}`,
+    title: "New Order Pending Approval",
+    message: `New order ${savedOrder.billNumber} from ${savedOrder.customer.fullName} - Rs. ${savedOrder.totalAmount.toLocaleString()} - Requires approval`,
     relatedId: savedOrder._id,
     relatedModel: "Order",
     priority: "high",
@@ -443,7 +401,7 @@ export const checkout = async (checkoutData) => {
 };
 
 export const updateOrderStatus = async (id, status) => {
-  const validStatuses = ["placed", "in-progress", "delivered", "completed"];
+  const validStatuses = ["pending", "placed", "accepted", "rejected", "in-progress", "delivered", "completed"];
   if (!validStatuses.includes(status)) {
     throw new Error(`Invalid status. Must be one of: ${validStatuses.join(", ")}`);
   }
@@ -468,6 +426,138 @@ export const updateOrderStatus = async (id, status) => {
   }
 
   return order;
+};
+
+/**
+ * Accept a pending order
+ * This will update stock and mark order as accepted
+ */
+export const acceptOrder = async (orderId) => {
+  const order = await Order.findById(orderId);
+  
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  if (order.status !== "pending") {
+    throw new Error(`Order cannot be accepted. Current status: ${order.status}`);
+  }
+
+  // Update order status to accepted
+  order.status = "accepted";
+  order.acceptedAt = new Date();
+  await order.save();
+
+  // Now update product stock and sales, create inventory transactions
+  for (const item of order.items) {
+    const product = await Product.findById(item.productId);
+    if (!product) {
+      throw new Error(`Product ${item.productId} not found`);
+    }
+
+    // Check stock again (in case it changed since order was placed)
+    if (product.stock < item.quantity) {
+      // Reject order if stock is insufficient
+      order.status = "rejected";
+      order.rejectedAt = new Date();
+      order.rejectionReason = `Insufficient stock for ${item.name}. Available: ${product.stock}, Requested: ${item.quantity}`;
+      await order.save();
+      throw new Error(order.rejectionReason);
+    }
+
+    const previousStock = product.stock;
+    const newStock = previousStock - item.quantity;
+
+    // Update product stock
+    await Product.findByIdAndUpdate(item.productId, {
+      $inc: { stock: -item.quantity, totalSold: item.quantity },
+    });
+
+    // Create inventory transaction record
+    await Inventory.create({
+      productId: item.productId,
+      productName: item.name,
+      type: "remove",
+      quantity: item.quantity,
+      previousStock,
+      newStock,
+      reason: `Sold via Order ${order.billNumber}`,
+      notes: `Customer: ${order.customer.fullName}`,
+    });
+
+    // Create low stock alert if needed
+    if (newStock > 0 && newStock < 10) {
+      await Notification.create({
+        type: "Low Stock Alert",
+        title: "Low Stock Alert",
+        message: `${item.name} is running low. Only ${newStock} units remaining.`,
+        relatedId: item.productId,
+        relatedModel: "Product",
+        priority: "high",
+      });
+    } else if (newStock === 0) {
+      await Notification.create({
+        type: "Low Stock Alert",
+        title: "Out of Stock",
+        message: `${item.name} is now OUT OF STOCK.`,
+        relatedId: item.productId,
+        relatedModel: "Product",
+        priority: "high",
+      });
+    }
+  }
+
+  // Create notification
+  await Notification.create({
+    type: "New Order",
+    title: "Order Accepted",
+    message: `Order ${order.billNumber} has been accepted and stock updated.`,
+    relatedId: order._id,
+    relatedModel: "Order",
+    priority: "medium",
+  });
+
+  return await Order.findById(orderId)
+    .populate("items.productId", "name imageUrl category stock")
+    .lean();
+};
+
+/**
+ * Reject a pending order
+ */
+export const rejectOrder = async (orderId, rejectionReason = "") => {
+  const order = await Order.findById(orderId);
+  
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  if (order.status !== "pending") {
+    throw new Error(`Order cannot be rejected. Current status: ${order.status}`);
+  }
+
+  // Update order status to rejected
+  order.status = "rejected";
+  order.rejectedAt = new Date();
+  order.rejectionReason = rejectionReason || "Order rejected by admin";
+  await order.save();
+
+  // If payment was made online, refund should be processed (not implemented here)
+  // For COD orders, no refund needed
+
+  // Create notification
+  await Notification.create({
+    type: "New Order",
+    title: "Order Rejected",
+    message: `Order ${order.billNumber} has been rejected.${rejectionReason ? ` Reason: ${rejectionReason}` : ""}`,
+    relatedId: order._id,
+    relatedModel: "Order",
+    priority: "medium",
+  });
+
+  return await Order.findById(orderId)
+    .populate("items.productId", "name imageUrl category stock")
+    .lean();
 };
 
 export const deleteOrder = async (id) => {

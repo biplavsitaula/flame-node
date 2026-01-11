@@ -6,7 +6,7 @@ import {
   fetchProductById,
   updateExistingProduct,
 } from "../controller/product.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import { authenticate, checkSuperAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -14,9 +14,9 @@ const router = express.Router();
 router.get("/products", fetchAllProducts);
 router.get("/products/:id", fetchProductById);
 
-// Protected routes
-router.post("/products", authenticate, createNewProduct);
-router.put("/products/:id", authenticate, updateExistingProduct);
-router.delete("/products/:id", authenticate, deleteProductById);
+// Protected routes - Modify (super_admin only)
+router.post("/products", authenticate, checkSuperAdmin, createNewProduct);
+router.put("/products/:id", authenticate, checkSuperAdmin, updateExistingProduct);
+router.delete("/products/:id", authenticate, checkSuperAdmin, deleteProductById);
 
 export default router;

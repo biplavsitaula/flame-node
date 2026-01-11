@@ -81,9 +81,19 @@ const OrderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["placed", "in-progress", "delivered", "completed"],
-      default: "placed",
+      enum: ["pending", "placed", "accepted", "rejected", "in-progress", "delivered", "completed"],
+      default: "pending",
       index: true,
+    },
+    acceptedAt: {
+      type: Date,
+    },
+    rejectedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
     },
     paymentMethod: {
       type: String,

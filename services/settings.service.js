@@ -85,8 +85,68 @@ export const updateSettings = async (settingsData) => {
    settings.theme = theme;
  }
 
+ // Update product categories if provided
+ if (settingsData.productCategories !== undefined) {
+   // Ensure all categories are lowercase and unique
+   const uniqueCategories = [...new Set(
+     settingsData.productCategories
+       .map(cat => cat.toLowerCase().trim())
+       .filter(cat => cat.length > 0)
+   )];
+   settings.productCategories = uniqueCategories;
+ }
+
 
  return await settings.save();
+};
+
+/**
+ * Add a new product category
+ */
+export const addProductCategory = async (category) => {
+  const settings = await Settings.getSettings();
+  
+  const normalizedCategory = category.toLowerCase().trim();
+  
+  if (!normalizedCategory) {
+    throw new Error("Category name cannot be empty");
+  }
+
+  if (settings.productCategories.includes(normalizedCategory)) {
+    throw new Error("Category already exists");
+  }
+
+  settings.productCategories.push(normalizedCategory);
+  await settings.save();
+
+  return settings;
+};
+
+/**
+ * Remove a product category
+ */
+export const removeProductCategory = async (category) => {
+  const settings = await Settings.getSettings();
+  
+  const normalizedCategory = category.toLowerCase().trim();
+  
+  const index = settings.productCategories.indexOf(normalizedCategory);
+  if (index === -1) {
+    throw new Error("Category not found");
+  }
+
+  settings.productCategories.splice(index, 1);
+  await settings.save();
+
+  return settings;
+};
+
+/**
+ * Get all product categories
+ */
+export const getProductCategories = async () => {
+  const settings = await Settings.getSettings();
+  return settings.productCategories || [];
 };
 
 

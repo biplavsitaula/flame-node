@@ -3,6 +3,9 @@ import {
   createSettings,
   updateSettings,
   resetSettings,
+  addProductCategory,
+  removeProductCategory,
+  getProductCategories,
 } from "../services/settings.service.js";
 
 /**
@@ -81,6 +84,84 @@ export const resetToDefaults = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Error resetting settings",
+    });
+  }
+};
+
+/**
+ * GET /settings/categories
+ * Get all product categories
+ */
+export const fetchProductCategories = async (req, res) => {
+  try {
+    const categories = await getProductCategories();
+    res.status(200).json({
+      success: true,
+      message: "Product categories fetched successfully",
+      data: categories,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error fetching product categories",
+    });
+  }
+};
+
+/**
+ * POST /settings/categories
+ * Add a new product category
+ */
+export const addCategory = async (req, res) => {
+  try {
+    const { category } = req.body;
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
+    }
+
+    const settings = await addProductCategory(category);
+    res.status(200).json({
+      success: true,
+      message: "Category added successfully",
+      data: settings.productCategories,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error adding category",
+    });
+  }
+};
+
+/**
+ * DELETE /settings/categories/:category
+ * Remove a product category
+ */
+export const removeCategory = async (req, res) => {
+  try {
+    const { category } = req.params;
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
+    }
+
+    const settings = await removeProductCategory(category);
+    res.status(200).json({
+      success: true,
+      message: "Category removed successfully",
+      data: settings.productCategories,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error removing category",
     });
   }
 };

@@ -1,5 +1,6 @@
 import User from "../models/user.models.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -12,8 +13,20 @@ const generateToken = (userId) => {
   );
 };
 
+// Generate and hash reset token
+const getResetPasswordToken = () => {
+  const resetToken = crypto.randomBytes(20).toString("hex");
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  const resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  return { resetToken, resetPasswordToken, resetPasswordExpire };
+};
+
 export const registerUser = async (userData) => {
-  const { email, password, fullName, mobile } = userData;
+  const { email, password, fullName, mobile, role } = userData;
 
   // Check if user already exists
   const existingUser = await User.findOne({ email });
@@ -21,12 +34,14 @@ export const registerUser = async (userData) => {
     throw new Error("User with this email already exists");
   }
 
-  // Create user
+  // Create user - role defaults to "user" (cannot be set during registration for security)
+  // Only super_admin can assign roles via user management endpoints
   const user = new User({
     email,
     password,
     fullName,
     mobile,
+    role: role || "user", // Default to "user", but allow if provided (for admin creation)
   });
 
   await user.save();
@@ -149,6 +164,85 @@ export const deleteUser = async (userId) => {
     throw new Error("User not found");
   }
   return { message: "User deleted successfully" };
+};
+
+/**
+ * Forgot Password - Generate reset token and send email
+ */
+export const forgotPassword = async (email) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    // Don't reveal if user exists or not for security
+    return {
+      message: "If an account with that email exists, a password reset link has been sent.",
+    };
+  }
+
+  // Generate reset token
+  const { resetToken, resetPasswordToken, resetPasswordExpire } =
+    getResetPasswordToken();
+
+  // Save hashed token to database
+  user.resetPasswordToken = resetPasswordToken;
+  user.resetPasswordExpire = resetPasswordExpire;
+  await user.save({ validateBeforeSave: false });
+
+  // Create reset URL
+  const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
+
+  // Send email (you'll need to implement email service)
+  try {
+    // Import email service dynamically to avoid circular dependencies
+    const { sendPasswordResetEmail } = await import("../utils/email.service.js");
+    await sendPasswordResetEmail(user.email, resetUrl, user.fullName);
+  } catch (error) {
+    // If email fails, remove the token
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    throw new Error("Email could not be sent. Please try again later.");
+  }
+
+  return {
+    message: "If an account with that email exists, a password reset link has been sent.",
+  };
+};
+
+/**
+ * Reset Password - Update password using reset token
+ */
+export const resetPassword = async (resetToken, newPassword) => {
+  // Hash the token to compare with database
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  // Find user with valid token
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  }).select("+password");
+
+  if (!user) {
+    throw new Error("Invalid or expired reset token");
+  }
+
+  // Update password
+  user.password = newPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  // Generate new token for automatic login
+  const token = generateToken(user._id);
+
+  return {
+    user: user.toJSON(),
+    token,
+    message: "Password reset successful",
+  };
 };
 
 

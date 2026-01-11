@@ -5,6 +5,8 @@ import {
  updateUser,
  getAllUsers,
  deleteUser,
+ forgotPassword,
+ resetPassword,
 } from "../services/auth.service.js";
 
 
@@ -185,6 +187,73 @@ export const deleteUserById = async (req, res) => {
      message: error.message || "User not found",
    });
  }
+};
+
+/**
+ * POST /auth/forgot-password
+ * Request password reset
+ */
+export const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const result = await forgotPassword(email);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error processing password reset request",
+    });
+  }
+};
+
+/**
+ * POST /auth/reset-password
+ * Reset password using token
+ */
+export const resetPasswordController = async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    const result = await resetPassword(resetToken, newPassword);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        user: result.user,
+        token: result.token,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error resetting password",
+    });
+  }
 };
 
 

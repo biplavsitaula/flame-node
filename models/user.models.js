@@ -22,6 +22,12 @@ const UserSchema = new mongoose.Schema(
       minlength: [6, "Password must be at least 6 characters"],
       select: false, // Don't return password by default
     },
+    role: {
+      type: String,
+      enum: ["super_admin", "admin", "user"],
+      default: "user",
+      required: true,
+    },
     mobile: {
       type: String,
       trim: true,
@@ -32,6 +38,14 @@ const UserSchema = new mongoose.Schema(
     },
     lastLogin: {
       type: Date,
+    },
+    resetPasswordToken: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpire: {
+      type: Date,
+      select: false,
     },
   },
   {
@@ -62,6 +76,7 @@ UserSchema.methods.toJSON = function () {
 
 // Indexes
 UserSchema.index({ email: 1 });
+UserSchema.index({ role: 1 });
 
 export default mongoose.model("User", UserSchema);
 

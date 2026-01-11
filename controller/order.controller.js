@@ -6,6 +6,8 @@ import {
   updateOrderStatus,
   deleteOrder,
   checkout,
+  acceptOrder,
+  rejectOrder,
 } from "../services/order.service.js";
 
 export const fetchAllOrders = async (req, res) => {
@@ -148,13 +150,56 @@ export const processCheckout = async (req, res) => {
     const result = await checkout(req.body);
     res.status(201).json({
       success: true,
-      message: "Order placed successfully",
+      message: "Order placed successfully. Waiting for admin approval.",
       data: result,
     });
   } catch (error) {
     res.status(400).json({
       success: false,
       message: error.message || "Error processing checkout",
+    });
+  }
+};
+
+/**
+ * POST /orders/:id/accept
+ * Accept a pending order (admin only)
+ */
+export const acceptOrderController = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const order = await acceptOrder(id);
+    res.status(200).json({
+      success: true,
+      message: "Order accepted successfully. Stock has been updated.",
+      data: order,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error accepting order",
+    });
+  }
+};
+
+/**
+ * POST /orders/:id/reject
+ * Reject a pending order (admin only)
+ */
+export const rejectOrderController = async (req, res) => {
+  const { id } = req.params;
+  const { rejectionReason } = req.body;
+  try {
+    const order = await rejectOrder(id, rejectionReason);
+    res.status(200).json({
+      success: true,
+      message: "Order rejected successfully",
+      data: order,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error rejecting order",
     });
   }
 };
