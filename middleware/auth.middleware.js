@@ -72,7 +72,7 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-// Check if user is super_admin (can perform CRUD operations)
+// Check if user is admin or super_admin (can perform CRUD operations)
 export const checkSuperAdmin = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
@@ -81,12 +81,13 @@ export const checkSuperAdmin = (req, res, next) => {
     });
   }
 
-  // if (req.user.role !== "super_admin") {
-  //   return res.status(403).json({
-  //     success: false,
-  //     message: "Access denied. Super admin privileges required.",
-  //   });
-  // }
+  // Allow both admin and super_admin to perform CRUD operations
+  if (req.user.role !== "admin" && req.user.role !== "super_admin") {
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Admin or super admin privileges required.",
+    });
+  }
 
   next();
 };
