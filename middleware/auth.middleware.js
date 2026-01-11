@@ -111,7 +111,7 @@ export const checkAdmin = (req, res, next) => {
   next();
 };
 
-// Check if user is admin (view only, cannot modify)
+// Check if user is admin or super_admin (can view and perform CRUD operations)
 export const checkAdminViewOnly = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({
@@ -120,19 +120,11 @@ export const checkAdminViewOnly = (req, res, next) => {
     });
   }
 
+  // Allow both admin and super_admin to perform all operations (view and CRUD)
   if (req.user.role !== "admin" && req.user.role !== "super_admin") {
     return res.status(403).json({
       success: false,
       message: "Access denied. Admin privileges required.",
-    });
-  }
-
-  // Allow GET requests for admin, but block POST/PUT/DELETE unless super_admin
-  const method = req.method.toUpperCase();
-  if (method !== "GET" && req.user.role !== "super_admin") {
-    return res.status(403).json({
-      success: false,
-      message: "Access denied. Only super admin can perform this action.",
     });
   }
 
