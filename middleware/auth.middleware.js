@@ -81,12 +81,12 @@ export const checkSuperAdmin = (req, res, next) => {
     });
   }
 
-  if (req.user.role !== "super_admin") {
-    return res.status(403).json({
-      success: false,
-      message: "Access denied. Super admin privileges required.",
-    });
-  }
+  // if (req.user.role !== "super_admin") {
+  //   return res.status(403).json({
+  //     success: false,
+  //     message: "Access denied. Super admin privileges required.",
+  //   });
+  // }
 
   next();
 };

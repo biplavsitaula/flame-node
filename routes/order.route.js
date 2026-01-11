@@ -22,6 +22,9 @@ router.get("/orders/bill/:billNumber", fetchOrderByBillNumber);
 // Checkout route (public - for customers)
 router.post("/checkout", processCheckout);
 
+// Order status check route (public - for customers to check their order status)
+router.get("/orders/status/:billNumber", fetchOrderByBillNumber);
+
 // Protected routes - Modify (super_admin only)
 router.post("/orders", authenticate, checkSuperAdmin, createNewOrder);
 router.put("/orders/:id", authenticate, checkSuperAdmin, updateOrder);
