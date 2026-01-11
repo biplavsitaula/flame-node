@@ -14,25 +14,32 @@
 // For now, we'll use a console log approach. Replace with actual email service in production.
 
 export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
+  // Always log the reset link to console (for development/debugging)
+  console.log("\n" + "=".repeat(60));
+  console.log("🔐 PASSWORD RESET LINK");
+  console.log("=".repeat(60));
+  console.log(`To: ${email}`);
+  console.log(`User: ${userName || "User"}`);
+  console.log(`\nReset URL: ${resetUrl}`);
+  console.log(`\n⚠️  This link will expire in 10 minutes.`);
+  console.log("=".repeat(60) + "\n");
+
   try {
     // Check if nodemailer is available
     let nodemailer;
     try {
       nodemailer = await import("nodemailer");
     } catch (error) {
-      // If nodemailer is not installed, log the reset link
-      console.log("=".repeat(60));
-      console.log("PASSWORD RESET EMAIL");
-      console.log("=".repeat(60));
-      console.log(`To: ${email}`);
-      console.log(`Subject: Password Reset Request`);
-      console.log(`\nHello ${userName || "User"},\n`);
-      console.log(`You requested to reset your password. Click the link below to reset it:`);
-      console.log(`\n${resetUrl}\n`);
-      console.log(`This link will expire in 10 minutes.`);
-      console.log(`If you didn't request this, please ignore this email.\n`);
-      console.log("=".repeat(60));
-      return;
+      console.warn("⚠️  nodemailer not found. Email will not be sent. Check console above for reset link.");
+      return { message: "Email service not configured. Check console for reset link." };
+    }
+
+    // Check if email credentials are configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.warn("⚠️  Email credentials not configured in .env file.");
+      console.warn("   Set EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, and EMAIL_FROM in your .env file.");
+      console.warn("   For now, the reset link is logged above. Use it to reset your password.");
+      return { message: "Email not configured. Check console for reset link." };
     }
 
     // Create transporter
@@ -45,6 +52,16 @@ export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
         pass: process.env.EMAIL_PASS,
       },
     });
+
+    // Verify transporter configuration
+    try {
+      await transporter.verify();
+      console.log("✅ Email service verified successfully");
+    } catch (verifyError) {
+      console.error("❌ Email service verification failed:", verifyError.message);
+      console.warn("⚠️  Email will not be sent. Use the reset link logged above.");
+      return { message: "Email service verification failed. Check console for reset link." };
+    }
 
     // Email content
     const mailOptions = {
@@ -104,20 +121,21 @@ export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
 
     // Send email
     const info = await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent:", info.messageId);
+    console.log("✅ Password reset email sent successfully!");
+    console.log(`   Message ID: ${info.messageId}`);
     return info;
   } catch (error) {
-    console.error("Error sending email:", error);
-    // Log the reset link as fallback
-    console.log("=".repeat(60));
-    console.log("PASSWORD RESET EMAIL (FALLBACK)");
-    console.log("=".repeat(60));
-    console.log(`To: ${email}`);
-    console.log(`Reset URL: ${resetUrl}`);
-    console.log("=".repeat(60));
-    throw error;
+    console.error("❌ Error sending email:", error.message);
+    console.warn("⚠️  Email sending failed, but the reset link is logged above. You can still use it to reset your password.");
+    // Don't throw error - we've already logged the reset link, so the user can still use it
+    // Return a success-like response so the auth service doesn't remove the token
+    return { 
+      message: "Email sending failed, but reset link is available in console logs.",
+      error: error.message 
+    };
   }
 };
+
 
 
 
