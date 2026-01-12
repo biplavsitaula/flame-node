@@ -191,21 +191,22 @@ export const forgotPassword = async (email) => {
   // Create reset URL
   const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
 
-  // Send email
+  // Send email with reset link
   try {
-    // Import email service dynamically to avoid circular dependencies
     const { sendPasswordResetEmail } = await import("./email.service.js");
     const emailResult = await sendPasswordResetEmail(user.email, resetUrl, user.fullName);
     
-    // Check if email sending failed (but don't remove token since reset link is logged to console)
-    if (emailResult && emailResult.error) {
-      console.warn("⚠️  Email sending failed, but reset token is still valid. Check console logs for reset link.");
+    if (emailResult && emailResult.success) {
+      console.log("✅ Password reset email sent successfully to:", user.email);
+    } else {
+      console.warn("⚠️  Email sending failed, but reset token is still valid.");
+      console.warn("⚠️  Reset URL:", resetUrl);
+      console.warn("⚠️  User can still use this link to reset password.");
     }
   } catch (error) {
-    // Only remove token if there's a critical error (shouldn't happen now, but keep for safety)
-    console.error("❌ Critical error in email service:", error.message);
-    console.warn("⚠️  Reset token is still valid. Check console logs for reset link.");
-    // Don't remove the token - the reset link is logged to console and can still be used
+    console.error("❌ Error sending password reset email:", error.message);
+    console.warn("⚠️  Reset token is still valid. Reset URL:", resetUrl);
+    // Don't remove the token - the reset link can still be used
   }
 
   return {
