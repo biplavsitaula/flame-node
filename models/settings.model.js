@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-
 const SettingsSchema = new mongoose.Schema(
  {
    // Notifications settings
@@ -19,7 +18,6 @@ const SettingsSchema = new mongoose.Schema(
      },
    },
 
-
    // Stock thresholds
    stockThresholds: {
      lowStock: {
@@ -33,7 +31,6 @@ const SettingsSchema = new mongoose.Schema(
        min: [0, "Critical stock threshold must be positive"],
      },
    },
-
 
    // Store information
    storeInfo: {
@@ -49,7 +46,6 @@ const SettingsSchema = new mongoose.Schema(
        lowercase: true,
      },
    },
-
 
    // Theme setting
    theme: {
@@ -91,7 +87,6 @@ const SettingsSchema = new mongoose.Schema(
  }
 );
 
-
 // Ensure only one settings document exists (singleton pattern)
 SettingsSchema.statics.getSettings = async function () {
  let settings = await this.findOne();
@@ -103,10 +98,6 @@ SettingsSchema.statics.getSettings = async function () {
 
 
 export default mongoose.model("Settings", SettingsSchema);
-
-
-
-
 
 
 

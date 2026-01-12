@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-
 const SeasonalThemeSchema = new mongoose.Schema(
  {
    keyname: {
@@ -75,10 +74,5 @@ const SeasonalThemeSchema = new mongoose.Schema(
  }
 );
 
-
 export default mongoose.model("SeasonalTheme", SeasonalThemeSchema);
-
-
-
-
 

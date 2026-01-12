@@ -20,11 +20,3 @@ router.put("/stock-alerts/reorder/:id", authenticate, reorderProductStock);
 export default router;
 
 
-
-
-
-
-
-
-
-

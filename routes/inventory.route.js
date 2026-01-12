@@ -21,6 +21,3 @@ router.post("/inventory/remove", authenticate, removeBulkStock);
 
 export default router;
 
-
-
-
