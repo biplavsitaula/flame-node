@@ -1,4 +1,5 @@
 import Settings from "../models/settings.model.js";
+import Product from "../models/product.models.js";
 
 
 /**
@@ -142,11 +143,23 @@ export const removeProductCategory = async (category) => {
 };
 
 /**
- * Get all product categories
+ * Get all product categories (from existing products + settings)
  */
 export const getProductCategories = async () => {
+  // Get distinct categories from actual products in the database
+  const productCategories = await Product.distinct("category");
+  
+  // Get categories from settings
   const settings = await Settings.getSettings();
-  return settings.productCategories || [];
+  const settingsCategories = settings.productCategories || [];
+  
+  // Merge and return unique categories (lowercase, sorted)
+  const allCategories = [...new Set([
+    ...productCategories.map(cat => cat?.toLowerCase()).filter(Boolean),
+    ...settingsCategories.map(cat => cat?.toLowerCase()).filter(Boolean),
+  ])].sort();
+  
+  return allCategories;
 };
 
 
