@@ -183,6 +183,116 @@ export const sendPaymentConfirmationEmail = async (payment, customerEmail) => {
 };
 
 /**
+ * Send password reset email
+ */
+export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #FF5050 0%, #FF8C00 100%); padding: 30px; text-align: center;">
+        <h1 style="color: white; margin: 0;">🔥 Flame Beverage</h1>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333;">Password Reset Request</h2>
+        
+        <p style="color: #666; font-size: 16px;">
+          Hello ${userName || "User"},
+        </p>
+        
+        <p style="color: #666; font-size: 16px;">
+          You requested to reset your password. Click the button below to reset it:
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background: linear-gradient(135deg, #FF5050 0%, #FF8C00 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+
+        <p style="color: #999; font-size: 14px;">
+          Or copy and paste this link in your browser:<br>
+          <a href="${resetUrl}" style="color: #FF5050;">${resetUrl}</a>
+        </p>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+          <p style="margin: 0; color: #856404; font-size: 14px;">
+            ⚠️ This link will expire in <strong>10 minutes</strong>.
+          </p>
+          <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">
+            If you didn't request this, please ignore this email.
+          </p>
+        </div>
+      </div>
+
+      <div style="background: #333; color: white; padding: 20px; text-align: center;">
+        <p style="margin: 0; font-size: 12px; color: #999;">
+          This is an automated email from Flame Beverage. Please do not reply.
+        </p>
+      </div>
+    </div>
+  `;
+
+  console.log("📧 Sending password reset email to:", email);
+  console.log("🔗 Reset URL:", resetUrl);
+
+  return await sendEmail({
+    to: email,
+    subject: "🔐 Password Reset - Flame Beverage",
+    text: `You requested to reset your password. Click this link to reset: ${resetUrl}. This link expires in 10 minutes.`,
+    html,
+  });
+};
+
+/**
+ * Send password reset confirmation email
+ */
+export const sendPasswordResetConfirmationEmail = async (email, userName) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #28a745; padding: 30px; text-align: center;">
+        <h1 style="color: white; margin: 0;">✅ Password Changed</h1>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333;">Password Reset Successful!</h2>
+        
+        <p style="color: #666; font-size: 16px;">
+          Hello ${userName || "User"},
+        </p>
+        
+        <p style="color: #666; font-size: 16px;">
+          Your password has been successfully changed.
+        </p>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <p style="margin: 0; color: #333;">
+            <strong>Changed at:</strong> ${new Date().toLocaleString()}
+          </p>
+        </div>
+
+        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-top: 20px;">
+          <p style="margin: 0; color: #721c24; font-size: 14px;">
+            ⚠️ If you didn't make this change, please contact us immediately or reset your password again.
+          </p>
+        </div>
+      </div>
+
+      <div style="background: #333; color: white; padding: 20px; text-align: center;">
+        <p style="margin: 0;">Stay secure! 🔒</p>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">The Flame Beverage Team</p>
+      </div>
+    </div>
+  `;
+
+  return await sendEmail({
+    to: email,
+    subject: "✅ Password Changed Successfully - Flame Beverage",
+    text: `Your password has been successfully changed. If you didn't make this change, please contact us immediately.`,
+    html,
+  });
+};
+
+/**
  * Send welcome email for new user registration
  */
 export const sendWelcomeEmail = async (user) => {

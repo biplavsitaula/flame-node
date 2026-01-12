@@ -194,7 +194,7 @@ export const forgotPassword = async (email) => {
   // Send email
   try {
     // Import email service dynamically to avoid circular dependencies
-    const { sendPasswordResetEmail } = await import("../utils/email.service.js");
+    const { sendPasswordResetEmail } = await import("./email.service.js");
     const emailResult = await sendPasswordResetEmail(user.email, resetUrl, user.fullName);
     
     // Check if email sending failed (but don't remove token since reset link is logged to console)
@@ -238,6 +238,16 @@ export const resetPassword = async (resetToken, newPassword) => {
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
+
+  // Send password reset confirmation email
+  try {
+    const { sendPasswordResetConfirmationEmail } = await import("./email.service.js");
+    await sendPasswordResetConfirmationEmail(user.email, user.fullName);
+    console.log("✅ Password reset confirmation email sent to:", user.email);
+  } catch (error) {
+    console.error("⚠️ Failed to send password reset confirmation email:", error.message);
+    // Don't throw - password was already reset successfully
+  }
 
   // Generate new token for automatic login
   const token = generateToken(user._id);
