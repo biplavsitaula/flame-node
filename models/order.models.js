@@ -41,6 +41,11 @@ const OrderSchema = new mongoose.Schema(
         required: [true, "Customer name is required"],
         trim: true,
       },
+      email: {
+        type: String,
+        trim: true,
+        lowercase: true,
+      },
       mobile: {
         type: String,
         required: [true, "Mobile number is required"],
@@ -120,7 +125,7 @@ const OrderSchema = new mongoose.Schema(
 // No pre-save hook needed to avoid "next is not a function" errors
 
 // Indexes
-OrderSchema.index({ "customer.fullName": "text", "customer.location": "text", billNumber: "text" });
+OrderSchema.index({ "customer.fullName": "text", "customer.email": "text", "customer.location": "text", billNumber: "text" });
 OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ totalAmount: -1 });
 

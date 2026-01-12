@@ -22,6 +22,7 @@ export const getAllOrders = async (query = {}) => {
     filter.$or = [
       { billNumber: { $regex: search, $options: "i" } },
       { "customer.fullName": { $regex: search, $options: "i" } },
+      { "customer.email": { $regex: search, $options: "i" } },
       { "customer.location": { $regex: search, $options: "i" } },
     ];
   }
@@ -230,6 +231,7 @@ export const checkout = async (checkoutData) => {
   const {
     fullName,
     phoneNumber,
+    email,
     deliveryAddress,
     paymentMethod, // "cod" or "online"
     paymentGateway, // "esewa", "khalti", "card" (required if online)
@@ -317,6 +319,7 @@ export const checkout = async (checkoutData) => {
       fullName,
       mobile: phoneNumber,
       location: deliveryAddress,
+      email: email,
     },
     items: itemsWithTotals,
     subtotal,
