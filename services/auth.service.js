@@ -193,25 +193,48 @@ export const forgotPassword = async (email) => {
   const resetUrl = `${backendUrl}/reset-password/${resetToken}`;
 
   // Send email with reset link
+  let emailSent = false;
+  let rateLimited = false;
+  
   try {
     const { sendPasswordResetEmail } = await import("./email.service.js");
     const emailResult = await sendPasswordResetEmail(user.email, resetUrl, user.fullName);
     
     if (emailResult && emailResult.success) {
       console.log("✅ Password reset email sent successfully to:", user.email);
+      console.log("🔗 Reset URL:", resetUrl);
+      emailSent = true;
     } else {
-      console.warn("⚠️  Email sending failed, but reset token is still valid.");
-      console.warn("⚠️  Reset URL:", resetUrl);
-      console.warn("⚠️  User can still use this link to reset password.");
+      // Check if it's rate limited
+      if (emailResult && emailResult.rateLimited) {
+        rateLimited = true;
+        console.warn("⚠️  Rate limit: Too many password reset requests. Please wait before requesting again.");
+        // Still save the token so they can use it when they get the email
+      } else {
+        console.warn("⚠️  Email sending failed:", emailResult?.error || "Unknown error");
+        console.warn("⚠️  Reset token is still valid. Reset URL:", resetUrl);
+        console.warn("⚠️  User can still use this link to reset password.");
+      }
     }
   } catch (error) {
     console.error("❌ Error sending password reset email:", error.message);
+    console.error("Full error:", error);
     console.warn("⚠️  Reset token is still valid. Reset URL:", resetUrl);
     // Don't remove the token - the reset link can still be used
   }
 
+  // Return appropriate message based on result
+  if (rateLimited) {
+    return {
+      message: "Too many password reset requests. Please wait 1 minute before requesting again.",
+      rateLimited: true,
+    };
+  }
+
   return {
-    message: "If an account with that email exists, a password reset link has been sent.",
+    message: emailSent 
+      ? "Password reset link has been sent to your email." 
+      : "If an account with that email exists, a password reset link has been sent.",
   };
 };
 

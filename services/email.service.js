@@ -11,12 +11,42 @@ const createTransporter = () => {
   });
 };
 
+// Rate limiting: track last email sent per recipient
+const emailRateLimit = new Map();
+
+/**
+ * Check if email can be sent (rate limiting)
+ */
+const canSendEmail = (to, minIntervalMs = 60000) => { // 1 minute cooldown
+  const lastSent = emailRateLimit.get(to);
+  if (!lastSent) {
+    return true;
+  }
+  const timeSinceLastSent = Date.now() - lastSent;
+  return timeSinceLastSent >= minIntervalMs;
+};
+
 /**
  * Send email
  */
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
+    // Rate limiting check
+    if (!canSendEmail(to)) {
+      const lastSent = emailRateLimit.get(to);
+      const waitTime = Math.ceil((60000 - (Date.now() - lastSent)) / 1000);
+      console.warn(`⏳ Rate limit: Please wait ${waitTime} seconds before sending another email to ${to}`);
+      return { 
+        success: false, 
+        error: `Please wait ${waitTime} seconds before requesting another email. This prevents spam.`,
+        rateLimited: true 
+      };
+    }
+
     const transporter = createTransporter();
+
+    // Verify connection
+    await transporter.verify();
 
     const mailOptions = {
       from: `"Flame Beverage" <hasinadhungel15@gmail.com>`,
@@ -27,11 +57,39 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent:", info.messageId);
+    console.log("✅ Email sent successfully:", info.messageId);
+    console.log("📧 To:", to);
+    console.log("📝 Subject:", subject);
+    
+    // Update rate limit
+    emailRateLimit.set(to, Date.now());
+    
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Email send error:", error.message);
-    return { success: false, error: error.message };
+    console.error("❌ Email send error:", error.message);
+    console.error("Full error:", error);
+    
+    // Check for specific Gmail errors
+    if (error.code === 'EAUTH') {
+      return { 
+        success: false, 
+        error: "Email authentication failed. Please check email credentials." 
+      };
+    }
+    if (error.code === 'EENVELOPE') {
+      return { 
+        success: false, 
+        error: "Invalid email address." 
+      };
+    }
+    if (error.responseCode === 550 || error.responseCode === 553) {
+      return { 
+        success: false, 
+        error: "Email rejected by server. Please check the recipient email address." 
+      };
+    }
+    
+    return { success: false, error: error.message || "Failed to send email" };
   }
 };
 

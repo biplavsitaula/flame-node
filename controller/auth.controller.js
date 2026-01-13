@@ -191,6 +191,16 @@ export const requestPasswordReset = async (req, res) => {
     }
 
     const result = await forgotPassword(email);
+    
+    // Check if there was a rate limit issue
+    if (result.rateLimited) {
+      return res.status(429).json({
+        success: false,
+        message: result.message || "Too many requests. Please wait 1 minute before requesting another password reset.",
+        rateLimited: true,
+      });
+    }
+    
     res.status(200).json({
       success: true,
       message: result.message,
