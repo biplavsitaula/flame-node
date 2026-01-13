@@ -188,8 +188,9 @@ export const forgotPassword = async (email) => {
   user.resetPasswordExpire = resetPasswordExpire;
   await user.save({ validateBeforeSave: false });
 
-  // Create reset URL
-  const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
+  // Create reset URL (points to backend password reset page)
+  const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+  const resetUrl = `${backendUrl}/reset-password/${resetToken}`;
 
   // Send email with reset link
   try {
