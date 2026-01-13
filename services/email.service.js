@@ -5,8 +5,8 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS, // Use App Password, not regular password
+      user: "hasinadhungel15@gmail.com",
+      pass: "tlon ohfn buon pbwn", // Use App Password, not regular password
     },
   });
 };
@@ -19,7 +19,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: `"Flame Beverage" <${process.env.EMAIL_USER}>`,
+      from: `"Flame Beverage" <hasinadhungel15@gmail.com>`,
       to,
       subject,
       text,
