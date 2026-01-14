@@ -4,6 +4,7 @@ import {
   updateSettings,
   resetSettings,
   addProductCategory,
+  updateProductCategory,
   removeProductCategory,
   getProductCategories,
 } from "../services/settings.service.js";
@@ -114,7 +115,7 @@ export const fetchProductCategories = async (req, res) => {
  */
 export const addCategory = async (req, res) => {
   try {
-    const { category } = req.body;
+    const { category, icon } = req.body;
 
     if (!category) {
       return res.status(400).json({
@@ -123,7 +124,12 @@ export const addCategory = async (req, res) => {
       });
     }
 
-    const settings = await addProductCategory(category);
+    const categoryData = {
+      name: category,
+      icon: icon || "",
+    };
+
+    const settings = await addProductCategory(categoryData);
     res.status(200).json({
       success: true,
       message: "Category added successfully",
@@ -133,6 +139,51 @@ export const addCategory = async (req, res) => {
     res.status(400).json({
       success: false,
       message: error.message || "Error adding category",
+    });
+  }
+};
+
+/**
+ * PUT /settings/categories/:category
+ * Update a product category (name and/or icon)
+ */
+export const updateCategory = async (req, res) => {
+  try {
+    const { category } = req.params;
+    const { name, icon } = req.body;
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name is required",
+      });
+    }
+
+    const categoryData = {};
+    if (name !== undefined) {
+      categoryData.name = name;
+    }
+    if (icon !== undefined) {
+      categoryData.icon = icon;
+    }
+
+    if (Object.keys(categoryData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one field (name or icon) must be provided",
+      });
+    }
+
+    const settings = await updateProductCategory(category, categoryData);
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      data: settings.productCategories,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error updating category",
     });
   }
 };

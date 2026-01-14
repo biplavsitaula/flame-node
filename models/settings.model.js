@@ -55,28 +55,42 @@ const SettingsSchema = new mongoose.Schema(
      lowercase: true,
    },
 
-   // Product categories (dynamic list)
+   // Product categories (dynamic list with icons)
    productCategories: {
-     type: [String],
+     type: [
+       {
+         name: {
+           type: String,
+           required: true,
+           trim: true,
+         },
+         icon: {
+           type: String,
+           default: "",
+           trim: true,
+         },
+       },
+     ],
      default: [
-       "whiskey",
-       "vodka",
-       "rum",
-       "gin",
-       "tequila",
-       "cognac",
-       "champagne",
-       "wine",
-       "beer",
-       "brandy",
-       "cold drinks",
-       "juices",
+       { name: "whiskey", icon: "" },
+       { name: "vodka", icon: "" },
+       { name: "rum", icon: "" },
+       { name: "gin", icon: "" },
+       { name: "tequila", icon: "" },
+       { name: "cognac", icon: "" },
+       { name: "champagne", icon: "" },
+       { name: "wine", icon: "" },
+       { name: "beer", icon: "" },
+       { name: "brandy", icon: "" },
+       { name: "cold drinks", icon: "" },
+       { name: "juices", icon: "" },
      ],
      validate: {
        validator: function (categories) {
-         // Ensure all categories are lowercase and unique
-         const uniqueCategories = [...new Set(categories.map(cat => cat.toLowerCase().trim()))];
-         return uniqueCategories.length === categories.length;
+         // Ensure all category names are lowercase and unique
+         const categoryNames = categories.map(cat => cat.name?.toLowerCase().trim()).filter(Boolean);
+         const uniqueCategories = [...new Set(categoryNames)];
+         return uniqueCategories.length === categoryNames.length;
        },
        message: "Categories must be unique",
      },
