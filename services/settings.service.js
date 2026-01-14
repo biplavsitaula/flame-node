@@ -14,8 +14,8 @@ export const getSettings = async () => {
 * Create initial settings (if not exists)
 */
 export const createSettings = async (settingsData) => {
- // Check if settings already exist
- const existingSettings = await Settings.findOne();
+ // Check if settings already exist (use lean to avoid validation issues with old data)
+ const existingSettings = await Settings.findOne().lean();
  if (existingSettings) {
    throw new Error("Settings already exist. Use update instead.");
  }
@@ -86,11 +86,8 @@ export const updateSettings = async (settingsData) => {
  } = settingsData;
 
 
- // Get existing settings or create new
- let settings = await Settings.findOne();
-  if (!settings) {
-   settings = new Settings();
- }
+ // Get existing settings or create new (this will auto-migrate old data)
+ let settings = await Settings.getSettings();
 
 
  // Update notifications if provided

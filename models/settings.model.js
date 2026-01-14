@@ -157,9 +157,39 @@ SettingsSchema.pre("save", function () {
 
 // Ensure only one settings document exists (singleton pattern)
 SettingsSchema.statics.getSettings = async function () {
- let settings = await this.findOne();
+ let settings = await this.findOne().lean();
  if (!settings) {
    settings = await this.create({});
+ } else {
+   // Check if productCategories needs migration from old format
+   if (settings.productCategories && Array.isArray(settings.productCategories)) {
+     const needsMigration = settings.productCategories.some(cat => typeof cat === 'string');
+     
+     if (needsMigration) {
+       // Migrate old string format to new object format
+       const migratedCategories = settings.productCategories.map(cat => {
+         if (typeof cat === 'string') {
+           return { name: cat.toLowerCase().trim(), icon: "" };
+         }
+         return cat;
+       });
+       
+       // Update directly in the database to avoid validation issues
+       await this.updateOne(
+         { _id: settings._id },
+         { $set: { productCategories: migratedCategories } }
+       );
+       
+       // Reload the document
+       settings = await this.findOne();
+     } else {
+       // Convert back from lean to mongoose document
+       settings = await this.findOne();
+     }
+   } else {
+     // Convert back from lean to mongoose document
+     settings = await this.findOne();
+   }
  }
  return settings;
 };
