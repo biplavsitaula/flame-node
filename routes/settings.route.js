@@ -12,9 +12,11 @@ import { authenticate, checkSuperAdmin, checkAdminViewOnly } from "../middleware
 
 const router = express.Router();
 
+// Public routes - anyone can view categories
+router.get("/settings/categories", fetchProductCategories);
+
 // Protected routes - View (admin and super_admin)
 router.get("/settings", authenticate, checkAdminViewOnly, fetchSettings);
-router.get("/settings/categories", authenticate, checkAdminViewOnly, fetchProductCategories);
 
 // Protected routes - Modify (super_admin only)
 router.post("/settings", authenticate, checkSuperAdmin, createNewSettings);
