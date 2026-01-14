@@ -20,6 +20,54 @@ export const createSettings = async (settingsData) => {
    throw new Error("Settings already exist. Use update instead.");
  }
 
+ // Process productCategories if provided
+ if (settingsData.productCategories !== undefined) {
+   let categoriesArray;
+   
+   // If it's a single string, convert to array
+   if (typeof settingsData.productCategories === 'string') {
+     categoriesArray = [settingsData.productCategories];
+   }
+   // If it's already an array, use it
+   else if (Array.isArray(settingsData.productCategories)) {
+     categoriesArray = settingsData.productCategories;
+   }
+   // Otherwise, use empty array
+   else {
+     categoriesArray = [];
+   }
+   
+   // Process categories: convert strings to objects, ensure proper format
+   const processedCategories = categoriesArray
+     .map(cat => {
+       // If it's a string, convert to object
+       if (typeof cat === 'string') {
+         return { name: cat.toLowerCase().trim(), icon: "" };
+       }
+       // If it's already an object, ensure it has the right structure
+       if (typeof cat === 'object' && cat !== null) {
+         return {
+           name: (cat.name || String(cat)).toLowerCase().trim(),
+           icon: cat.icon || "",
+         };
+       }
+       // Skip invalid entries
+       return null;
+     })
+     .filter(cat => cat !== null && cat.name.length > 0);
+   
+   // Remove duplicates based on name
+   const uniqueCategories = [];
+   const seenNames = new Set();
+   for (const cat of processedCategories) {
+     if (!seenNames.has(cat.name)) {
+       seenNames.add(cat.name);
+       uniqueCategories.push(cat);
+     }
+   }
+   
+   settingsData.productCategories = uniqueCategories;
+ }
 
  const settings = new Settings(settingsData);
  return await settings.save();
@@ -88,18 +136,40 @@ export const updateSettings = async (settingsData) => {
 
  // Update product categories if provided
  if (settingsData.productCategories !== undefined) {
-   // Ensure all categories are lowercase and unique
-   const processedCategories = settingsData.productCategories
+   // Handle different input formats
+   let categoriesArray;
+   
+   // If it's a single string, convert to array
+   if (typeof settingsData.productCategories === 'string') {
+     categoriesArray = [settingsData.productCategories];
+   }
+   // If it's already an array, use it
+   else if (Array.isArray(settingsData.productCategories)) {
+     categoriesArray = settingsData.productCategories;
+   }
+   // Otherwise, skip updating categories
+   else {
+     categoriesArray = [];
+   }
+   
+   // Process categories: convert strings to objects, ensure proper format
+   const processedCategories = categoriesArray
      .map(cat => {
+       // If it's a string, convert to object
        if (typeof cat === 'string') {
          return { name: cat.toLowerCase().trim(), icon: "" };
        }
-       return {
-         name: (cat.name || "").toLowerCase().trim(),
-         icon: cat.icon || "",
-       };
+       // If it's already an object, ensure it has the right structure
+       if (typeof cat === 'object' && cat !== null) {
+         return {
+           name: (cat.name || String(cat)).toLowerCase().trim(),
+           icon: cat.icon || "",
+         };
+       }
+       // Skip invalid entries
+       return null;
      })
-     .filter(cat => cat.name.length > 0);
+     .filter(cat => cat !== null && cat.name.length > 0);
    
    // Remove duplicates based on name
    const uniqueCategories = [];
@@ -110,7 +180,11 @@ export const updateSettings = async (settingsData) => {
        uniqueCategories.push(cat);
      }
    }
-   settings.productCategories = uniqueCategories;
+   
+   // Only update if we have valid categories
+   if (uniqueCategories.length > 0 || categoriesArray.length === 0) {
+     settings.productCategories = uniqueCategories;
+   }
  }
 
 
