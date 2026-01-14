@@ -115,7 +115,7 @@ export const fetchProductCategories = async (req, res) => {
  */
 export const addCategory = async (req, res) => {
   try {
-    const { category, icon } = req.body;
+    const { category } = req.body;
 
     if (!category) {
       return res.status(400).json({
@@ -124,12 +124,7 @@ export const addCategory = async (req, res) => {
       });
     }
 
-    const categoryData = {
-      name: category,
-      icon: icon || "",
-    };
-
-    const settings = await addProductCategory(categoryData);
+    const settings = await addProductCategory(category);
     res.status(200).json({
       success: true,
       message: "Category added successfully",
@@ -145,12 +140,12 @@ export const addCategory = async (req, res) => {
 
 /**
  * PUT /settings/categories/:category
- * Update a product category (name and/or icon)
+ * Update a product category name
  */
 export const updateCategory = async (req, res) => {
   try {
     const { category } = req.params;
-    const { name, icon } = req.body;
+    const { name } = req.body;
 
     if (!category) {
       return res.status(400).json({
@@ -159,22 +154,14 @@ export const updateCategory = async (req, res) => {
       });
     }
 
-    const categoryData = {};
-    if (name !== undefined) {
-      categoryData.name = name;
-    }
-    if (icon !== undefined) {
-      categoryData.icon = icon;
-    }
-
-    if (Object.keys(categoryData).length === 0) {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: "At least one field (name or icon) must be provided",
+        message: "New category name is required",
       });
     }
 
-    const settings = await updateProductCategory(category, categoryData);
+    const settings = await updateProductCategory(category, name);
     res.status(200).json({
       success: true,
       message: "Category updated successfully",

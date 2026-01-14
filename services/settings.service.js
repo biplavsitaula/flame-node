@@ -37,34 +37,24 @@ export const createSettings = async (settingsData) => {
      categoriesArray = [];
    }
    
-   // Process categories: convert strings to objects, ensure proper format
+   // Process categories: ensure all are strings and lowercase
    const processedCategories = categoriesArray
      .map(cat => {
-       // If it's a string, convert to object
+       // If it's a string, use it
        if (typeof cat === 'string') {
-         return { name: cat.toLowerCase().trim(), icon: "" };
+         return cat.toLowerCase().trim();
        }
-       // If it's already an object, ensure it has the right structure
-       if (typeof cat === 'object' && cat !== null) {
-         return {
-           name: (cat.name || String(cat)).toLowerCase().trim(),
-           icon: cat.icon || "",
-         };
+       // If it's an object, extract the name
+       if (typeof cat === 'object' && cat !== null && cat.name) {
+         return String(cat.name).toLowerCase().trim();
        }
        // Skip invalid entries
        return null;
      })
-     .filter(cat => cat !== null && cat.name.length > 0);
+     .filter(cat => cat !== null && cat.length > 0);
    
-   // Remove duplicates based on name
-   const uniqueCategories = [];
-   const seenNames = new Set();
-   for (const cat of processedCategories) {
-     if (!seenNames.has(cat.name)) {
-       seenNames.add(cat.name);
-       uniqueCategories.push(cat);
-     }
-   }
+   // Remove duplicates
+   const uniqueCategories = [...new Set(processedCategories)];
    
    settingsData.productCategories = uniqueCategories;
  }
@@ -149,34 +139,24 @@ export const updateSettings = async (settingsData) => {
      categoriesArray = [];
    }
    
-   // Process categories: convert strings to objects, ensure proper format
+   // Process categories: ensure all are strings and lowercase
    const processedCategories = categoriesArray
      .map(cat => {
-       // If it's a string, convert to object
+       // If it's a string, use it
        if (typeof cat === 'string') {
-         return { name: cat.toLowerCase().trim(), icon: "" };
+         return cat.toLowerCase().trim();
        }
-       // If it's already an object, ensure it has the right structure
-       if (typeof cat === 'object' && cat !== null) {
-         return {
-           name: (cat.name || String(cat)).toLowerCase().trim(),
-           icon: cat.icon || "",
-         };
+       // If it's an object, extract the name
+       if (typeof cat === 'object' && cat !== null && cat.name) {
+         return String(cat.name).toLowerCase().trim();
        }
        // Skip invalid entries
        return null;
      })
-     .filter(cat => cat !== null && cat.name.length > 0);
+     .filter(cat => cat !== null && cat.length > 0);
    
-   // Remove duplicates based on name
-   const uniqueCategories = [];
-   const seenNames = new Set();
-   for (const cat of processedCategories) {
-     if (!seenNames.has(cat.name)) {
-       seenNames.add(cat.name);
-       uniqueCategories.push(cat);
-     }
-   }
+   // Remove duplicates
+   const uniqueCategories = [...new Set(processedCategories)];
    
    // Only update if we have valid categories
    if (uniqueCategories.length > 0 || categoriesArray.length === 0) {
@@ -191,80 +171,52 @@ export const updateSettings = async (settingsData) => {
 /**
  * Add a new product category
  */
-export const addProductCategory = async (categoryData) => {
+export const addProductCategory = async (categoryName) => {
   const settings = await Settings.getSettings();
   
-  // Handle both string (backward compatibility) and object formats
-  let categoryName, categoryIcon;
-  if (typeof categoryData === 'string') {
-    categoryName = categoryData.toLowerCase().trim();
-    categoryIcon = "";
-  } else {
-    categoryName = (categoryData.name || "").toLowerCase().trim();
-    categoryIcon = categoryData.icon || "";
-  }
+  // Normalize category name
+  const normalizedCategory = String(categoryName).toLowerCase().trim();
   
-  if (!categoryName) {
+  if (!normalizedCategory) {
     throw new Error("Category name cannot be empty");
   }
 
   // Check if category already exists
-  const existingCategory = settings.productCategories.find(
-    cat => cat.name === categoryName
-  );
-  
-  if (existingCategory) {
+  if (settings.productCategories.includes(normalizedCategory)) {
     throw new Error("Category already exists");
   }
 
-  settings.productCategories.push({
-    name: categoryName,
-    icon: categoryIcon,
-  });
+  settings.productCategories.push(normalizedCategory);
   await settings.save();
 
   return settings;
 };
 
 /**
- * Update a product category (name and/or icon)
+ * Update a product category name
  */
-export const updateProductCategory = async (categoryName, categoryData) => {
+export const updateProductCategory = async (categoryName, newCategoryName) => {
   const settings = await Settings.getSettings();
   
-  const normalizedCategory = categoryName.toLowerCase().trim();
+  const normalizedOldName = String(categoryName).toLowerCase().trim();
+  const normalizedNewName = String(newCategoryName).toLowerCase().trim();
   
-  const category = settings.productCategories.find(
-    cat => cat.name === normalizedCategory
-  );
+  if (!normalizedNewName) {
+    throw new Error("Category name cannot be empty");
+  }
   
-  if (!category) {
+  const categoryIndex = settings.productCategories.indexOf(normalizedOldName);
+  
+  if (categoryIndex === -1) {
     throw new Error("Category not found");
   }
 
-  // Update category name if provided
-  if (categoryData.name !== undefined) {
-    const newName = categoryData.name.toLowerCase().trim();
-    if (!newName) {
-      throw new Error("Category name cannot be empty");
-    }
-    
-    // Check if new name already exists (and it's not the same category)
-    const existingCategory = settings.productCategories.find(
-      cat => cat.name === newName && cat.name !== normalizedCategory
-    );
-    if (existingCategory) {
-      throw new Error("Category name already exists");
-    }
-    
-    category.name = newName;
+  // Check if new name already exists (and it's not the same category)
+  if (normalizedOldName !== normalizedNewName && settings.productCategories.includes(normalizedNewName)) {
+    throw new Error("Category name already exists");
   }
-
-  // Update icon if provided
-  if (categoryData.icon !== undefined) {
-    category.icon = categoryData.icon || "";
-  }
-
+  
+  settings.productCategories[categoryIndex] = normalizedNewName;
   await settings.save();
 
   return settings;
@@ -276,11 +228,9 @@ export const updateProductCategory = async (categoryName, categoryData) => {
 export const removeProductCategory = async (category) => {
   const settings = await Settings.getSettings();
   
-  const normalizedCategory = category.toLowerCase().trim();
+  const normalizedCategory = String(category).toLowerCase().trim();
   
-  const categoryIndex = settings.productCategories.findIndex(
-    cat => cat.name === normalizedCategory
-  );
+  const categoryIndex = settings.productCategories.indexOf(normalizedCategory);
   
   if (categoryIndex === -1) {
     throw new Error("Category not found");
@@ -303,36 +253,11 @@ export const getProductCategories = async () => {
   const settings = await Settings.getSettings();
   const settingsCategories = settings.productCategories || [];
   
-  // Create a map to store categories with their icons
-  const categoryMap = new Map();
-  
-  // Add categories from settings (with icons)
-  settingsCategories.forEach(cat => {
-    if (cat.name) {
-      categoryMap.set(cat.name.toLowerCase(), {
-        name: cat.name,
-        icon: cat.icon || "",
-      });
-    }
-  });
-  
-  // Add categories from products (without icons if not in settings)
-  productCategories.forEach(cat => {
-    if (cat) {
-      const normalizedCat = cat.toLowerCase();
-      if (!categoryMap.has(normalizedCat)) {
-        categoryMap.set(normalizedCat, {
-          name: normalizedCat,
-          icon: "",
-        });
-      }
-    }
-  });
-  
-  // Convert map to array and sort by name
-  const allCategories = Array.from(categoryMap.values()).sort((a, b) => 
-    a.name.localeCompare(b.name)
-  );
+  // Merge and return unique categories (lowercase, sorted)
+  const allCategories = [...new Set([
+    ...productCategories.map(cat => cat?.toLowerCase()).filter(Boolean),
+    ...settingsCategories.map(cat => String(cat)?.toLowerCase()).filter(Boolean),
+  ])].sort();
   
   return allCategories;
 };

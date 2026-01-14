@@ -55,58 +55,42 @@ const SettingsSchema = new mongoose.Schema(
      lowercase: true,
    },
 
-   // Product categories (dynamic list with icons)
+   // Product categories (dynamic list)
    productCategories: {
-     type: [
-       {
-         name: {
-           type: String,
-           required: true,
-           trim: true,
-         },
-         icon: {
-           type: String,
-           default: "",
-           trim: true,
-         },
-       },
-     ],
+     type: [String],
      default: [
-       { name: "whiskey", icon: "" },
-       { name: "vodka", icon: "" },
-       { name: "rum", icon: "" },
-       { name: "gin", icon: "" },
-       { name: "tequila", icon: "" },
-       { name: "cognac", icon: "" },
-       { name: "champagne", icon: "" },
-       { name: "wine", icon: "" },
-       { name: "beer", icon: "" },
-       { name: "brandy", icon: "" },
-       { name: "cold drinks", icon: "" },
-       { name: "juices", icon: "" },
+       "whiskey",
+       "vodka",
+       "rum",
+       "gin",
+       "tequila",
+       "cognac",
+       "champagne",
+       "wine",
+       "beer",
+       "brandy",
+       "cold drinks",
+       "juices",
      ],
      set: function (value) {
        // Handle single string
        if (typeof value === 'string') {
-         return [{ name: value.toLowerCase().trim(), icon: "" }];
+         return [value.toLowerCase().trim()];
        }
        // Handle array
        if (Array.isArray(value)) {
          return value.map(cat => {
            // String item
            if (typeof cat === 'string') {
-             return { name: cat.toLowerCase().trim(), icon: "" };
+             return cat.toLowerCase().trim();
            }
-           // Object item
-           if (typeof cat === 'object' && cat !== null) {
-             return {
-               name: (cat.name || String(cat)).toLowerCase().trim(),
-               icon: cat.icon || "",
-             };
+           // Object item (extract name only)
+           if (typeof cat === 'object' && cat !== null && cat.name) {
+             return String(cat.name).toLowerCase().trim();
            }
            // Fallback
-           return { name: String(cat).toLowerCase().trim(), icon: "" };
-         }).filter(cat => cat.name && cat.name.length > 0);
+           return String(cat).toLowerCase().trim();
+         }).filter(cat => cat && cat.length > 0);
        }
        // Return as-is for other cases
        return value;
@@ -114,7 +98,7 @@ const SettingsSchema = new mongoose.Schema(
      validate: {
        validator: function (categories) {
          // Ensure all category names are lowercase and unique
-         const categoryNames = categories.map(cat => cat.name?.toLowerCase().trim()).filter(Boolean);
+         const categoryNames = categories.map(cat => String(cat).toLowerCase().trim()).filter(Boolean);
          const uniqueCategories = [...new Set(categoryNames)];
          return uniqueCategories.length === categoryNames.length;
        },
@@ -130,68 +114,77 @@ const SettingsSchema = new mongoose.Schema(
 // Pre-save hook to normalize productCategories
 SettingsSchema.pre("save", function () {
   if (this.productCategories) {
-    // Convert any string values to proper object format
-    this.productCategories = this.productCategories.map(cat => {
-      // If it's already an object with name property, keep it
-      if (typeof cat === 'object' && cat !== null && cat.name) {
-        return {
-          name: String(cat.name).toLowerCase().trim(),
-          icon: cat.icon || "",
-        };
-      }
-      // If it's a string, convert to object
-      if (typeof cat === 'string') {
-        return {
-          name: cat.toLowerCase().trim(),
-          icon: "",
-        };
-      }
-      // Fallback for any other type
-      return {
-        name: String(cat).toLowerCase().trim(),
-        icon: "",
-      };
-    }).filter(cat => cat.name && cat.name.length > 0);
+    // Ensure all categories are strings, lowercase, and unique
+    this.productCategories = this.productCategories
+      .map(cat => {
+        // If it's an object, extract the name
+        if (typeof cat === 'object' && cat !== null && cat.name) {
+          return String(cat.name).toLowerCase().trim();
+        }
+        // If it's a string, use it
+        if (typeof cat === 'string') {
+          return cat.toLowerCase().trim();
+        }
+        // Fallback
+        return String(cat).toLowerCase().trim();
+      })
+      .filter(cat => cat && cat.length > 0);
   }
 });
 
 // Ensure only one settings document exists (singleton pattern)
 SettingsSchema.statics.getSettings = async function () {
- let settings = await this.findOne().lean();
- if (!settings) {
-   settings = await this.create({});
- } else {
-   // Check if productCategories needs migration from old format
-   if (settings.productCategories && Array.isArray(settings.productCategories)) {
-     const needsMigration = settings.productCategories.some(cat => typeof cat === 'string');
+ try {
+   // Try to get the document using lean to bypass validation
+   let settingsDoc = await this.findOne().lean();
+   
+   if (!settingsDoc) {
+     // No document exists, create new one with defaults
+     const settings = await this.create({});
+     return settings;
+   }
+   
+   // Check if productCategories needs migration from object format to string format
+   if (settingsDoc.productCategories && Array.isArray(settingsDoc.productCategories)) {
+     const needsMigration = settingsDoc.productCategories.some(cat => typeof cat === 'object');
      
      if (needsMigration) {
-       // Migrate old string format to new object format
-       const migratedCategories = settings.productCategories.map(cat => {
-         if (typeof cat === 'string') {
-           return { name: cat.toLowerCase().trim(), icon: "" };
-         }
-         return cat;
-       });
+       console.log("🔄 Auto-migrating productCategories from object format to string format...");
        
-       // Update directly in the database to avoid validation issues
-       await this.updateOne(
-         { _id: settings._id },
+       // Migrate object format to simple string format
+       const migratedCategories = settingsDoc.productCategories.map(cat => {
+         if (typeof cat === 'object' && cat !== null && cat.name) {
+           return String(cat.name).toLowerCase().trim();
+         }
+         if (typeof cat === 'string') {
+           return cat.toLowerCase().trim();
+         }
+         return String(cat).toLowerCase().trim();
+       }).filter(cat => cat && cat.length > 0);
+       
+       // Update directly in the database using native MongoDB driver to bypass Mongoose validation
+       await this.collection.updateOne(
+         { _id: settingsDoc._id },
          { $set: { productCategories: migratedCategories } }
        );
        
-       // Reload the document
-       settings = await this.findOne();
-     } else {
-       // Convert back from lean to mongoose document
-       settings = await this.findOne();
+       console.log("✅ Migration completed successfully");
      }
-   } else {
-     // Convert back from lean to mongoose document
-     settings = await this.findOne();
    }
+   
+   // Now load the document normally (should work after migration)
+   const settings = await this.findOne();
+   return settings;
+   
+ } catch (error) {
+   console.error("Error in getSettings:", error.message);
+   
+   // If all else fails, delete the corrupt document and create a new one
+   console.log("⚠️  Corrupt settings detected. Recreating with defaults...");
+   await this.collection.deleteMany({});
+   const settings = await this.create({});
+   return settings;
  }
- return settings;
 };
 
 
