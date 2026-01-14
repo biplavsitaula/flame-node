@@ -18,6 +18,7 @@ import settingsRoutes from "./routes/settings.route.js";
 import seasonalThemeRoutes from "./routes/seasonalTheme.route.js";
 import inventoryRoutes from "./routes/inventory.route.js";
 import emailRoutes from "./routes/email.route.js";
+import offerRoutes from "./routes/offer.route.js";
 
 dotenv.config();
 connectDB();
@@ -270,6 +271,7 @@ app.use("/api", settingsRoutes);
 app.use("/api", seasonalThemeRoutes);
 app.use("/api", inventoryRoutes);
 app.use("/api", emailRoutes);
+app.use("/api", offerRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

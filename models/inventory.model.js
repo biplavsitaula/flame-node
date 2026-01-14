@@ -55,3 +55,6 @@ InventorySchema.index({ productId: 1, type: 1 });
 export default mongoose.model("Inventory", InventorySchema);
 
 
+
+
+

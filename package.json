@@ -14,9 +14,10 @@
   "seed:payments": "node ./seeders/payment.js",
   "seed:reviews": "node ./seeders/review.js",
   "seed:notifications": "node ./seeders/notification.js",
-  "seed:settings": "node ./seeders/settings.js",
-  "seed:seasonal-themes": "node ./seeders/seasonalTheme.js",
-  "seed:all": "node ./seeders/user.js && node ./seeders/product.js && node ./seeders/order.js && node ./seeders/payment.js && node ./seeders/review.js && node ./seeders/notification.js && node ./seeders/settings.js && node ./seeders/seasonalTheme.js"
+"seed:settings": "node ./seeders/settings.js",
+    "seed:seasonal-themes": "node ./seeders/seasonalTheme.js",
+    "seed:offers": "node ./seeders/offer.js",
+    "seed:all": "node ./seeders/user.js && node ./seeders/product.js && node ./seeders/order.js && node ./seeders/payment.js && node ./seeders/review.js && node ./seeders/notification.js && node ./seeders/settings.js && node ./seeders/seasonalTheme.js && node ./seeders/offer.js"
  },
  "repository": {
   "type": "git",
