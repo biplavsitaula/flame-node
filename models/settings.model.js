@@ -85,6 +85,32 @@ const SettingsSchema = new mongoose.Schema(
        { name: "cold drinks", icon: "" },
        { name: "juices", icon: "" },
      ],
+     set: function (value) {
+       // Handle single string
+       if (typeof value === 'string') {
+         return [{ name: value.toLowerCase().trim(), icon: "" }];
+       }
+       // Handle array
+       if (Array.isArray(value)) {
+         return value.map(cat => {
+           // String item
+           if (typeof cat === 'string') {
+             return { name: cat.toLowerCase().trim(), icon: "" };
+           }
+           // Object item
+           if (typeof cat === 'object' && cat !== null) {
+             return {
+               name: (cat.name || String(cat)).toLowerCase().trim(),
+               icon: cat.icon || "",
+             };
+           }
+           // Fallback
+           return { name: String(cat).toLowerCase().trim(), icon: "" };
+         }).filter(cat => cat.name && cat.name.length > 0);
+       }
+       // Return as-is for other cases
+       return value;
+     },
      validate: {
        validator: function (categories) {
          // Ensure all category names are lowercase and unique
@@ -100,6 +126,34 @@ const SettingsSchema = new mongoose.Schema(
    timestamps: true,
  }
 );
+
+// Pre-save hook to normalize productCategories
+SettingsSchema.pre("save", function () {
+  if (this.productCategories) {
+    // Convert any string values to proper object format
+    this.productCategories = this.productCategories.map(cat => {
+      // If it's already an object with name property, keep it
+      if (typeof cat === 'object' && cat !== null && cat.name) {
+        return {
+          name: String(cat.name).toLowerCase().trim(),
+          icon: cat.icon || "",
+        };
+      }
+      // If it's a string, convert to object
+      if (typeof cat === 'string') {
+        return {
+          name: cat.toLowerCase().trim(),
+          icon: "",
+        };
+      }
+      // Fallback for any other type
+      return {
+        name: String(cat).toLowerCase().trim(),
+        icon: "",
+      };
+    }).filter(cat => cat.name && cat.name.length > 0);
+  }
+});
 
 // Ensure only one settings document exists (singleton pattern)
 SettingsSchema.statics.getSettings = async function () {
