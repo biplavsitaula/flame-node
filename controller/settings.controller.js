@@ -124,11 +124,15 @@ export const addCategory = async (req, res) => {
       });
     }
 
-    const settings = await addProductCategory(category);
+    await addProductCategory(category);
+    
+    // Get all categories (from settings + products) for consistent response
+    const allCategories = await getProductCategories();
+    
     res.status(200).json({
       success: true,
       message: "Category added successfully",
-      data: settings.productCategories,
+      data: allCategories,
     });
   } catch (error) {
     res.status(400).json({
@@ -161,11 +165,15 @@ export const updateCategory = async (req, res) => {
       });
     }
 
-    const settings = await updateProductCategory(category, name);
+    await updateProductCategory(category, name);
+    
+    // Get all categories (from settings + products) for consistent response
+    const allCategories = await getProductCategories();
+    
     res.status(200).json({
       success: true,
       message: "Category updated successfully",
-      data: settings.productCategories,
+      data: allCategories,
     });
   } catch (error) {
     res.status(400).json({
@@ -190,11 +198,15 @@ export const removeCategory = async (req, res) => {
       });
     }
 
-    const settings = await removeProductCategory(category);
+    await removeProductCategory(category);
+    
+    // Get all categories (from settings + products) for consistent response
+    const allCategories = await getProductCategories();
+    
     res.status(200).json({
       success: true,
       message: "Category removed successfully",
-      data: settings.productCategories,
+      data: allCategories,
     });
   } catch (error) {
     res.status(400).json({
