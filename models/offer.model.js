@@ -4,23 +4,23 @@ const OfferSchema = new mongoose.Schema(
   {
     icon: {
       type: String,
-      required: [true, "Icon is required"],
       trim: true,
+      default: "",
     },
     title: {
       type: String,
-      required: [true, "Title is required"],
       trim: true,
+      default: "",
     },
     description: {
       type: String,
-      required: [true, "Description is required"],
       trim: true,
+      default: "",
     },
     color: {
       type: String,
-      required: [true, "Color is required"],
       trim: true,
+      default: "",
     },
     isActive: {
       type: Boolean,
