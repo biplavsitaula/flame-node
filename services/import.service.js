@@ -23,58 +23,66 @@ export const generateProductTemplate = () => {
       "Product ID",
       "Name",
       "Category",
-      "Brand",
       "Price",
-      "Discount Percent",
       "Stock",
-      "Alcohol Percentage",
+      "Status",
+      "Rating",
+      "Sales",
+      "In Stock",
+      "Is New",
       "Volume",
-      "Image URL",
-      "Tag",
-      "Is Recommended",
+      "Alcohol Co",
+      "Origin",
+      "Created Date",
     ],
     sampleRows: [
       [
         "",
         "Johnnie Walker Black Label",
         "whiskey",
-        "Johnnie Walker",
         2500,
-        10,
         50,
-        40,
+        "In Stock",
+        4.5,
+        120,
+        "Yes",
+        "Yes",
         "750ml",
+        40,
+        "Scotland",
         "",
-        "premium",
-        "true",
       ],
       [
         "",
         "Absolut Vodka",
         "vodka",
-        "Absolut",
         1800,
-        5,
         75,
-        40,
+        "In Stock",
+        4.2,
+        95,
+        "Yes",
+        "No",
         "750ml",
+        40,
+        "Sweden",
         "",
-        "popular",
-        "false",
       ],
       [
         "",
         "Bacardi White Rum",
         "rum",
-        "Bacardi",
         1200,
-        0,
         100,
-        40,
+        "In Stock",
+        4.0,
+        150,
+        "Yes",
+        "No",
         "750ml",
+        40,
+        "Puerto Rico",
         "",
-        "",
-        "false",
       ],
     ],
   };
@@ -229,6 +237,16 @@ export const importProductsFromFile = async (worksheet) => {
           finalPrice,
         };
 
+        // Update rating if provided
+        if (productData.rating !== undefined && productData.rating !== null && !isNaN(productData.rating)) {
+          updateData.rating = Math.min(5, Math.max(0, productData.rating)); // Clamp between 0-5
+        }
+
+        // Update totalSold (Sales) if provided
+        if (productData.totalSold !== undefined && productData.totalSold !== null && !isNaN(productData.totalSold)) {
+          updateData.totalSold = Math.max(0, productData.totalSold);
+        }
+
         // Update optional fields if provided (even if empty string)
         if (productData.brand !== undefined && productData.brand !== null) {
           updateData.brand = productData.brand;
@@ -296,6 +314,16 @@ export const importProductsFromFile = async (worksheet) => {
             finalPrice,
           };
 
+          // Update rating if provided
+          if (productData.rating !== undefined && productData.rating !== null && !isNaN(productData.rating)) {
+            updateData.rating = Math.min(5, Math.max(0, productData.rating));
+          }
+
+          // Update totalSold if provided
+          if (productData.totalSold !== undefined && productData.totalSold !== null && !isNaN(productData.totalSold)) {
+            updateData.totalSold = Math.max(0, productData.totalSold);
+          }
+
           if (productData.brand !== undefined && productData.brand !== null) {
             updateData.brand = productData.brand;
           }
@@ -333,6 +361,8 @@ export const importProductsFromFile = async (worksheet) => {
             discountAmount,
             finalPrice,
             stock: productData.stock,
+            rating: productData.rating || 0,
+            totalSold: productData.totalSold || 0,
             alcoholPercentage: productData.alcoholPercentage || undefined,
             volume: productData.volume || "",
             imageUrl: productData.imageUrl || "",
@@ -399,23 +429,36 @@ const parseProductRow = (row, rowNumber) => {
     return defaultValue;
   };
 
-  // Product ID is in column 1 (optional), shift all other columns by 1
+  // Parse columns according to the new template structure:
+  // 1: Product ID, 2: Name, 3: Category, 4: Price, 5: Stock, 6: Status (ignored), 
+  // 7: Rating, 8: Sales, 9: In Stock (ignored), 10: Is New, 11: Volume, 
+  // 12: Alcohol Co, 13: Origin, 14: Created Date (ignored)
+  
   const productId = getCellValue(1);
   const productIdString = productId ? productId.toString().trim() : null;
+
+  // Parse "Is New" - map to isRecommended
+  const isNew = parseBoolean(getCellValue(10));
+  
+  // Parse "Origin" - map to tag field
+  const origin = getCellValue(13)?.toString().trim() || "";
 
   return {
     productId: productIdString || null,
     name: getCellValue(2)?.toString().trim() || null,
     category: getCellValue(3)?.toString().trim().toLowerCase() || null,
-    brand: getCellValue(4)?.toString().trim() || "",
-    price: parseNumber(getCellValue(5)),
-    discountPercent: parseNumber(getCellValue(6), 0),
-    stock: parseNumber(getCellValue(7), 0),
-    alcoholPercentage: parseNumber(getCellValue(8)),
-    volume: getCellValue(9)?.toString().trim() || "",
-    imageUrl: getCellValue(10)?.toString().trim() || "",
-    tag: getCellValue(11)?.toString().trim() || "",
-    isRecommended: parseBoolean(getCellValue(12)),
+    brand: "", // Brand not in template, keep empty
+    price: parseNumber(getCellValue(4)),
+    discountPercent: 0, // Discount not in template, default to 0
+    stock: parseNumber(getCellValue(5), 0),
+    rating: parseNumber(getCellValue(7), 0), // Rating from column 7
+    totalSold: parseNumber(getCellValue(8), 0), // Sales from column 8
+    alcoholPercentage: parseNumber(getCellValue(12)), // Alcohol Co from column 12
+    volume: getCellValue(11)?.toString().trim() || "", // Volume from column 11
+    imageUrl: "", // Image URL not in template
+    tag: origin, // Origin maps to tag
+    isRecommended: isNew, // Is New maps to isRecommended
+    // Status, In Stock, Created Date are ignored (calculated/auto-generated)
   };
 };
 

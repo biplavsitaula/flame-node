@@ -56,16 +56,18 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
       if (index === 0) column.width = 25; // Product ID
       else if (index === 1) column.width = 30; // Name
       else if (index === 2) column.width = 15; // Category
-      else if (index === 3) column.width = 15; // Brand
-      else if (index === 4) column.width = 12; // Price
-      else if (index === 5) column.width = 12; // Discount %
-      else if (index === 6) column.width = 12; // Stock
-      else if (index === 7) column.width = 12; // Alcohol %
-      else if (index === 8) column.width = 12; // Volume
-      else if (index === 9) column.width = 40; // Image URL
-      else if (index === 10) column.width = 15; // Tag
-      else if (index === 11) column.width = 15; // Is Recommended
-      else column.width = 20;
+      else if (index === 3) column.width = 12; // Price
+      else if (index === 4) column.width = 12; // Stock
+      else if (index === 5) column.width = 15; // Status
+      else if (index === 6) column.width = 10; // Rating
+      else if (index === 7) column.width = 12; // Sales
+      else if (index === 8) column.width = 12; // In Stock
+      else if (index === 9) column.width = 12; // Is New
+      else if (index === 10) column.width = 12; // Volume
+      else if (index === 11) column.width = 12; // Alcohol Co
+      else if (index === 12) column.width = 20; // Origin
+      else if (index === 13) column.width = 18; // Created Date
+      else column.width = 15;
     });
 
     // Add data validation for category
@@ -93,7 +95,7 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
       "2. Required fields: Name, Category, Price, Stock",
     ]);
     instructionsSheet.addRow([
-      "3. Optional fields: Product ID, Brand, Discount Percent, Alcohol Percentage, Volume, Image URL, Tag, Is Recommended",
+      "3. Optional fields: Product ID, Rating, Sales, Volume, Alcohol Co, Origin, Is New",
     ]);
     instructionsSheet.addRow([
       "4. Product ID (Column A): Leave empty for new products, or enter existing product MongoDB _id to update",
@@ -111,16 +113,19 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
       "8. Price and Stock must be positive numbers",
     ]);
     instructionsSheet.addRow([
-      "9. Discount Percent must be between 0 and 100",
+      "9. Rating must be between 0 and 5",
     ]);
     instructionsSheet.addRow([
-      "10. Alcohol Percentage must be between 0 and 100",
+      "10. Sales (totalSold) must be a positive number",
     ]);
     instructionsSheet.addRow([
-      "11. Is Recommended: Use 'true' or 'false' (case-insensitive)",
+      "11. Alcohol Co (Alcohol Content) must be between 0 and 100",
     ]);
     instructionsSheet.addRow([
-      "12. Leave Image URL empty if you don't have an image",
+      "12. Is New: Use 'Yes', 'true', or '1' for recommended products, 'No', 'false', or '0' otherwise",
+    ]);
+    instructionsSheet.addRow([
+      "13. Status, In Stock, and Created Date columns are auto-calculated and will be ignored during import",
     ]);
 
     res.setHeader(
