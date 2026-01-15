@@ -2,11 +2,31 @@ import nodemailer from "nodemailer";
 
 // Create transporter
 const createTransporter = () => {
+  // Use environment variables if available, otherwise fall back to hardcoded (for development)
+  const emailUser = process.env.EMAIL_USER || "hasinadhungel15@gmail.com";
+  const emailPass = process.env.EMAIL_PASS || "igjb befr pjim wcpg";
+  const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com";
+  const emailPort = parseInt(process.env.EMAIL_PORT || "587");
+
+  // If EMAIL_HOST is set, use custom SMTP configuration
+  if (process.env.EMAIL_HOST) {
+    return nodemailer.createTransport({
+      host: emailHost,
+      port: emailPort,
+      secure: emailPort === 465, // true for 465, false for other ports
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+    });
+  }
+
+  // Otherwise use Gmail service
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "hasinadhungel15@gmail.com",
-      pass: "tlon ohfn buon pbwn", // Use App Password, not regular password
+      user: emailUser,
+      pass: emailPass, // Use App Password, not regular password
     },
   });
 };
@@ -46,10 +66,23 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     const transporter = createTransporter();
 
     // Verify connection
-    await transporter.verify();
+    console.log("🔍 Verifying email connection...");
+    try {
+      await transporter.verify();
+      console.log("✅ Email server connection verified");
+    } catch (verifyError) {
+      console.error("❌ Email server verification failed:", verifyError.message);
+      return {
+        success: false,
+        error: `Email server verification failed: ${verifyError.message}. Please check your email configuration.`,
+      };
+    }
+
+    const emailUser = process.env.EMAIL_USER || "hasinadhungel15@gmail.com";
+    const emailFrom = process.env.EMAIL_FROM || `"Flame Beverage" <${emailUser}>`;
 
     const mailOptions = {
-      from: `"Flame Beverage" <hasinadhungel15@gmail.com>`,
+      from: emailFrom,
       to,
       subject,
       text,
@@ -67,19 +100,31 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("❌ Email send error:", error.message);
+    console.error("Error code:", error.code);
+    console.error("Error response:", error.response);
     console.error("Full error:", error);
     
     // Check for specific Gmail errors
     if (error.code === 'EAUTH') {
+      console.error("❌ Authentication failed. Check:");
+      console.error("   - Email credentials in .env file");
+      console.error("   - If using Gmail, ensure you're using an App Password (not regular password)");
+      console.error("   - Enable 'Less secure app access' or use OAuth2");
       return { 
         success: false, 
-        error: "Email authentication failed. Please check email credentials." 
+        error: "Email authentication failed. Please check email credentials. For Gmail, use an App Password." 
       };
     }
     if (error.code === 'EENVELOPE') {
       return { 
         success: false, 
         error: "Invalid email address." 
+      };
+    }
+    if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+      return {
+        success: false,
+        error: "Connection to email server failed. Please check your internet connection and email server settings.",
       };
     }
     if (error.responseCode === 550 || error.responseCode === 553) {
@@ -89,7 +134,11 @@ export const sendEmail = async ({ to, subject, text, html }) => {
       };
     }
     
-    return { success: false, error: error.message || "Failed to send email" };
+    return { 
+      success: false, 
+      error: error.message || "Failed to send email",
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    };
   }
 };
 
@@ -292,13 +341,27 @@ export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
 
   console.log("📧 Sending password reset email to:", email);
   console.log("🔗 Reset URL:", resetUrl);
+  console.log("👤 User Name:", userName || "User");
 
-  return await sendEmail({
+  const result = await sendEmail({
     to: email,
     subject: "🔐 Password Reset - Flame Beverage",
     text: `You requested to reset your password. Click this link to reset: ${resetUrl}. This link expires in 10 minutes.`,
     html,
   });
+
+  if (result.success) {
+    console.log("✅ Password reset email sent successfully!");
+    console.log("   Message ID:", result.messageId);
+  } else {
+    console.error("❌ Failed to send password reset email");
+    console.error("   Error:", result.error);
+    if (result.rateLimited) {
+      console.warn("   ⚠️  Rate limited - please wait before requesting again");
+    }
+  }
+
+  return result;
 };
 
 /**
