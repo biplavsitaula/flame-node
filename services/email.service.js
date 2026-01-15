@@ -3,10 +3,17 @@ import nodemailer from "nodemailer";
 // Create transporter
 const createTransporter = () => {
   // Use environment variables if available, otherwise fall back to hardcoded (for development)
-  const emailUser = process.env.EMAIL_USER || "hasinadhungel15@gmail.com";
-  const emailPass = process.env.EMAIL_PASS || "igjb befr pjim wcpg";
-  const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com";
+  const emailUser = (process.env.EMAIL_USER || "hasinadhungel15@gmail.com").trim();
+  // Gmail App Passwords may have spaces - keep them, but trim surrounding whitespace
+  const emailPass = (process.env.EMAIL_PASS || "igjb befr pjim wcpg").trim();
+  const emailHost = (process.env.EMAIL_HOST || "smtp.gmail.com").trim();
   const emailPort = parseInt(process.env.EMAIL_PORT || "587");
+
+  console.log("📧 Email Configuration:");
+  console.log("   User:", emailUser);
+  console.log("   Host:", emailHost);
+  console.log("   Port:", emailPort);
+  console.log("   Password:", emailPass ? "***" + emailPass.slice(-4) : "Not set");
 
   // If EMAIL_HOST is set, use custom SMTP configuration
   if (process.env.EMAIL_HOST) {
@@ -28,6 +35,13 @@ const createTransporter = () => {
       user: emailUser,
       pass: emailPass, // Use App Password, not regular password
     },
+    // Add timeout and connection options
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    // Debug mode for troubleshooting
+    debug: process.env.NODE_ENV === "development",
+    logger: process.env.NODE_ENV === "development",
   });
 };
 
@@ -89,15 +103,22 @@ export const sendEmail = async ({ to, subject, text, html }) => {
       html,
     };
 
+    console.log("📤 Sending email...");
+    console.log("   From:", emailFrom);
+    console.log("   To:", to);
+    console.log("   Subject:", subject);
+    
     const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Email sent successfully:", info.messageId);
-    console.log("📧 To:", to);
-    console.log("📝 Subject:", subject);
+    
+    console.log("✅ Email sent successfully!");
+    console.log("   Message ID:", info.messageId);
+    console.log("   Response:", info.response);
+    console.log("   📬 Email should arrive shortly. Check inbox and spam folder.");
     
     // Update rate limit
     emailRateLimit.set(to, Date.now());
     
-    return { success: true, messageId: info.messageId };
+    return { success: true, messageId: info.messageId, response: info.response };
   } catch (error) {
     console.error("❌ Email send error:", error.message);
     console.error("Error code:", error.code);
@@ -293,6 +314,16 @@ export const sendPaymentConfirmationEmail = async (payment, customerEmail) => {
  * Send password reset email
  */
 export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
+  // Always log the reset link to console (for development/debugging)
+  console.log("\n" + "=".repeat(80));
+  console.log("🔐 PASSWORD RESET LINK");
+  console.log("=".repeat(80));
+  console.log(`To: ${email}`);
+  console.log(`User: ${userName || "User"}`);
+  console.log(`\nReset URL: ${resetUrl}`);
+  console.log(`\n⚠️  This link will expire in 10 minutes.`);
+  console.log("=".repeat(80) + "\n");
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: linear-gradient(135deg, #FF5050 0%, #FF8C00 100%); padding: 30px; text-align: center;">
@@ -318,7 +349,7 @@ export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
 
         <p style="color: #999; font-size: 14px;">
           Or copy and paste this link in your browser:<br>
-          <a href="${resetUrl}" style="color: #FF5050;">${resetUrl}</a>
+          <a href="${resetUrl}" style="color: #FF5050; word-break: break-all;">${resetUrl}</a>
         </p>
 
         <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px;">
@@ -339,29 +370,41 @@ export const sendPasswordResetEmail = async (email, resetUrl, userName) => {
     </div>
   `;
 
-  console.log("📧 Sending password reset email to:", email);
-  console.log("🔗 Reset URL:", resetUrl);
-  console.log("👤 User Name:", userName || "User");
+  console.log("📧 Attempting to send password reset email to:", email);
 
-  const result = await sendEmail({
-    to: email,
-    subject: "🔐 Password Reset - Flame Beverage",
-    text: `You requested to reset your password. Click this link to reset: ${resetUrl}. This link expires in 10 minutes.`,
-    html,
-  });
+  try {
+    const result = await sendEmail({
+      to: email,
+      subject: "🔐 Password Reset - Flame Beverage",
+      text: `You requested to reset your password. Click this link to reset: ${resetUrl}. This link expires in 10 minutes.`,
+      html,
+    });
 
-  if (result.success) {
-    console.log("✅ Password reset email sent successfully!");
-    console.log("   Message ID:", result.messageId);
-  } else {
-    console.error("❌ Failed to send password reset email");
-    console.error("   Error:", result.error);
-    if (result.rateLimited) {
-      console.warn("   ⚠️  Rate limited - please wait before requesting again");
+    if (result.success) {
+      console.log("✅ Password reset email sent successfully!");
+      console.log("   Message ID:", result.messageId);
+      console.log("   📬 Check your inbox (and spam folder) at:", email);
+    } else {
+      console.error("❌ Failed to send password reset email");
+      console.error("   Error:", result.error);
+      if (result.rateLimited) {
+        console.warn("   ⚠️  Rate limited - please wait before requesting again");
+      }
+      console.warn("   ⚠️  However, the reset link is logged above. You can still use it to reset your password.");
     }
-  }
 
-  return result;
+    return result;
+  } catch (error) {
+    console.error("❌ Exception while sending password reset email:", error.message);
+    console.error("   Full error:", error);
+    console.warn("   ⚠️  The reset link is logged above. You can still use it to reset your password.");
+    
+    return {
+      success: false,
+      error: error.message || "Failed to send email",
+      resetLinkAvailable: true, // Indicate that reset link is in console
+    };
+  }
 };
 
 /**

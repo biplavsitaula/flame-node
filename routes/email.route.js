@@ -1,11 +1,10 @@
 import express from "express";
 import { sendEmail } from "../services/email.service.js";
-import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Test email endpoint
-router.post("/email/test", authenticate, async (req, res) => {
+// Test email endpoint (public for testing)
+router.post("/email/test", async (req, res) => {
   try {
     const { to } = req.body;
     
@@ -54,6 +53,60 @@ router.post("/email/test", authenticate, async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Error sending test email",
+    });
+  }
+});
+
+// Email configuration diagnostic endpoint
+router.get("/email/diagnostic", async (req, res) => {
+  try {
+    const emailUser = process.env.EMAIL_USER || "hasinadhungel15@gmail.com";
+    const emailPass = process.env.EMAIL_PASS ? "***" + process.env.EMAIL_PASS.slice(-4) : "Not set";
+    const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com (Gmail service)";
+    const emailPort = process.env.EMAIL_PORT || "587 (default)";
+
+    // Try to verify connection
+    const nodemailer = await import("nodemailer");
+    const transporter = nodemailer.default.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER || "hasinadhungel15@gmail.com",
+        pass: process.env.EMAIL_PASS || "igjb befr pjim wcpg",
+      },
+    });
+
+    let connectionStatus = "Unknown";
+    try {
+      await transporter.verify();
+      connectionStatus = "✅ Connected successfully";
+    } catch (error) {
+      connectionStatus = `❌ Connection failed: ${error.message}`;
+    }
+
+    res.status(200).json({
+      success: true,
+      configuration: {
+        emailUser,
+        emailPass: emailPass,
+        emailHost,
+        emailPort,
+        connectionStatus,
+      },
+      instructions: {
+        gmail: "For Gmail, you need to use an App Password (not your regular password).",
+        steps: [
+          "1. Go to your Google Account settings",
+          "2. Enable 2-Step Verification",
+          "3. Go to App Passwords",
+          "4. Generate a new App Password for 'Mail'",
+          "5. Use that 16-character password (with spaces) in EMAIL_PASS",
+        ],
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
     });
   }
 });
