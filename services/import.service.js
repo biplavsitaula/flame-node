@@ -107,6 +107,14 @@ export const importProductsFromFile = async (worksheet) => {
   const columnOffsets = detectColumnStructure(headerRow);
   console.log(`📋 Column structure detected:`, columnOffsets);
 
+  // Log header row for debugging
+  const headerValues = [];
+  for (let i = 1; i <= 15; i++) {
+    const cell = headerRow.getCell(i);
+    headerValues.push(cell.value?.toString() || "");
+  }
+  console.log(`📋 Header row values:`, headerValues);
+
   // Skip header row (row 1), start from row 2
   for (let rowNumber = 2; rowNumber <= totalRows; rowNumber++) {
     try {
@@ -138,12 +146,22 @@ export const importProductsFromFile = async (worksheet) => {
         continue;
       }
 
-      // Validate category
+      // Validate category - check if it looks like a currency value
+      if (!productData.category || productData.category.match(/^(rs\.?|[\d.,]+)/i)) {
+        results.errors.push({
+          row: rowNumber,
+          product: productData.name,
+          error: `Invalid category: "${productData.category}". Category appears to be a price value. Please check your Excel file structure. Valid categories: ${validCategories.join(", ")}`,
+        });
+        console.log(`❌ Row ${rowNumber} validation failed: Category looks like currency: ${productData.category}`);
+        continue;
+      }
+
       if (!validCategories.includes(productData.category.toLowerCase())) {
         results.errors.push({
           row: rowNumber,
           product: productData.name,
-          error: `Invalid category: ${productData.category}. Valid categories: ${validCategories.join(", ")}`,
+          error: `Invalid category: "${productData.category}". Valid categories: ${validCategories.join(", ")}`,
         });
         console.log(`❌ Row ${rowNumber} validation failed: Invalid category ${productData.category}`);
         continue;
@@ -470,12 +488,26 @@ const parseProductRow = (row, rowNumber, columnOffsets) => {
     if (value === null || value === undefined) return defaultValue;
     if (typeof value === "number") return value;
     if (typeof value === "string") {
-      // Remove currency symbols and commas
-      const cleaned = value.replace(/[Rs.,\s]/gi, "").trim();
+      // Remove currency symbols (Rs., $, etc.), commas, and whitespace
+      const cleaned = value.replace(/[Rs$.,\s]/gi, "").trim();
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? defaultValue : parsed;
     }
     return defaultValue;
+  };
+
+  const cleanCategory = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") {
+      // Remove any currency symbols or numbers that might have been read incorrectly
+      const cleaned = value.toString().trim().toLowerCase();
+      // If it looks like a currency value, return null
+      if (cleaned.match(/^(rs\.?|[\d.,]+)/i)) {
+        return null;
+      }
+      return cleaned;
+    }
+    return value.toString().trim().toLowerCase() || null;
   };
 
   // Get Product ID if column exists
@@ -488,14 +520,43 @@ const parseProductRow = (row, rowNumber, columnOffsets) => {
   // Parse "Origin" - map to tag field
   const origin = getCellValue(columnOffsets.originOffset)?.toString().trim() || "";
 
+  // Get raw values for debugging
+  const rawName = getCellValue(columnOffsets.nameOffset);
+  const rawCategory = getCellValue(columnOffsets.categoryOffset);
+  const rawPrice = getCellValue(columnOffsets.priceOffset);
+  const rawStock = getCellValue(columnOffsets.stockOffset);
+
+  // Parse values with better handling
+  const name = rawName?.toString().trim() || null;
+  const category = cleanCategory(rawCategory);
+  const price = parseNumber(rawPrice);
+  const stock = parseNumber(rawStock, 0);
+
+  // Debug logging for first few rows
+  if (rowNumber <= 5) {
+    console.log(`🔍 Row ${rowNumber} raw values:`, {
+      name: rawName,
+      category: rawCategory,
+      price: rawPrice,
+      stock: rawStock,
+      offsets: columnOffsets,
+    });
+    console.log(`🔍 Row ${rowNumber} parsed values:`, {
+      name,
+      category,
+      price,
+      stock,
+    });
+  }
+
   return {
     productId: productIdString || null,
-    name: getCellValue(columnOffsets.nameOffset)?.toString().trim() || null,
-    category: getCellValue(columnOffsets.categoryOffset)?.toString().trim().toLowerCase() || null,
+    name,
+    category,
     brand: "", // Brand not in template, keep empty
-    price: parseNumber(getCellValue(columnOffsets.priceOffset)),
+    price,
     discountPercent: 0, // Discount not in template, default to 0
-    stock: parseNumber(getCellValue(columnOffsets.stockOffset), 0),
+    stock,
     rating: parseNumber(getCellValue(columnOffsets.ratingOffset), 0),
     totalSold: parseNumber(getCellValue(columnOffsets.salesOffset), 0),
     alcoholPercentage: parseNumber(getCellValue(columnOffsets.alcoholOffset)),
