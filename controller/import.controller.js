@@ -53,17 +53,18 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
 
     // Set column widths
     worksheet.columns.forEach((column, index) => {
-      if (index === 0) column.width = 30; // Name
-      else if (index === 1) column.width = 15; // Category
-      else if (index === 2) column.width = 15; // Brand
-      else if (index === 3) column.width = 12; // Price
-      else if (index === 4) column.width = 12; // Discount %
-      else if (index === 5) column.width = 12; // Stock
-      else if (index === 6) column.width = 12; // Alcohol %
-      else if (index === 7) column.width = 12; // Volume
-      else if (index === 8) column.width = 40; // Image URL
-      else if (index === 9) column.width = 15; // Tag
-      else if (index === 10) column.width = 15; // Is Recommended
+      if (index === 0) column.width = 25; // Product ID
+      else if (index === 1) column.width = 30; // Name
+      else if (index === 2) column.width = 15; // Category
+      else if (index === 3) column.width = 15; // Brand
+      else if (index === 4) column.width = 12; // Price
+      else if (index === 5) column.width = 12; // Discount %
+      else if (index === 6) column.width = 12; // Stock
+      else if (index === 7) column.width = 12; // Alcohol %
+      else if (index === 8) column.width = 12; // Volume
+      else if (index === 9) column.width = 40; // Image URL
+      else if (index === 10) column.width = 15; // Tag
+      else if (index === 11) column.width = 15; // Is Recommended
       else column.width = 20;
     });
 
@@ -92,28 +93,34 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
       "2. Required fields: Name, Category, Price, Stock",
     ]);
     instructionsSheet.addRow([
-      "3. Optional fields: Brand, Discount Percent, Alcohol Percentage, Volume, Image URL, Tag, Is Recommended",
+      "3. Optional fields: Product ID, Brand, Discount Percent, Alcohol Percentage, Volume, Image URL, Tag, Is Recommended",
     ]);
     instructionsSheet.addRow([
-      "4. Category must be one of: whiskey, vodka, rum, gin, tequila, cognac, champagne, wine, beer, brandy",
+      "4. Product ID (Column A): Leave empty for new products, or enter existing product MongoDB _id to update",
     ]);
     instructionsSheet.addRow([
-      "5. Price and Stock must be positive numbers",
+      "5. If Product ID is provided, the product will be updated even if the name changes",
     ]);
     instructionsSheet.addRow([
-      "6. Discount Percent must be between 0 and 100",
+      "6. If Product ID is empty, the system will try to match by product name (case-insensitive)",
     ]);
     instructionsSheet.addRow([
-      "7. Alcohol Percentage must be between 0 and 100",
+      "7. Category must be one of: whiskey, vodka, rum, gin, tequila, cognac, champagne, wine, beer, brandy",
     ]);
     instructionsSheet.addRow([
-      "8. Is Recommended: Use 'true' or 'false' (case-insensitive)",
+      "8. Price and Stock must be positive numbers",
     ]);
     instructionsSheet.addRow([
-      "9. If a product with the same name exists, it will be updated",
+      "9. Discount Percent must be between 0 and 100",
     ]);
     instructionsSheet.addRow([
-      "10. Leave Image URL empty if you don't have an image",
+      "10. Alcohol Percentage must be between 0 and 100",
+    ]);
+    instructionsSheet.addRow([
+      "11. Is Recommended: Use 'true' or 'false' (case-insensitive)",
+    ]);
+    instructionsSheet.addRow([
+      "12. Leave Image URL empty if you don't have an image",
     ]);
 
     res.setHeader(

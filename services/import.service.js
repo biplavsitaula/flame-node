@@ -20,6 +20,7 @@ const validCategories = [
 export const generateProductTemplate = () => {
   return {
     headers: [
+      "Product ID",
       "Name",
       "Category",
       "Brand",
@@ -34,6 +35,7 @@ export const generateProductTemplate = () => {
     ],
     sampleRows: [
       [
+        "",
         "Johnnie Walker Black Label",
         "whiskey",
         "Johnnie Walker",
@@ -47,6 +49,7 @@ export const generateProductTemplate = () => {
         "true",
       ],
       [
+        "",
         "Absolut Vodka",
         "vodka",
         "Absolut",
@@ -60,6 +63,7 @@ export const generateProductTemplate = () => {
         "false",
       ],
       [
+        "",
         "Bacardi White Rum",
         "rum",
         "Bacardi",
@@ -180,21 +184,43 @@ export const importProductsFromFile = async (worksheet) => {
         }
       }
 
-      // Check if product exists (by name, case-insensitive)
-      const existingProduct = await Product.findOne({
-        name: { $regex: new RegExp(`^${productData.name}$`, "i") },
-      });
+      // Find existing product: first by Product ID if provided, otherwise by name
+      let existingProduct = null;
+      
+      if (productData.productId) {
+        // Try to find by MongoDB _id
+        try {
+          existingProduct = await Product.findById(productData.productId);
+          if (existingProduct) {
+            console.log(`🔍 Found product by ID: ${productData.productId}`);
+          }
+        } catch (error) {
+          console.log(`⚠️  Invalid Product ID format: ${productData.productId}`);
+        }
+      }
+      
+      // If not found by ID, try to find by name (case-insensitive)
+      if (!existingProduct && productData.name) {
+        existingProduct = await Product.findOne({
+          name: { $regex: new RegExp(`^${productData.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") },
+        });
+        if (existingProduct) {
+          console.log(`🔍 Found product by name: ${productData.name}`);
+        }
+      }
 
       if (existingProduct) {
         // Update existing product
+        console.log(`🔄 Updating product: ${existingProduct.name} -> ${productData.name}`);
+        
         // Calculate discount and final price
         const discountPercent = productData.discountPercent !== undefined ? productData.discountPercent : existingProduct.discountPercent || 0;
         const discountAmount = (productData.price * discountPercent) / 100;
         const finalPrice = productData.price - discountAmount;
 
-        // Preserve existing fields that shouldn't be overwritten
+        // Build update data - update all provided fields
         const updateData = {
-          name: productData.name,
+          name: productData.name, // Update name even if it changed
           category: productData.category,
           price: productData.price,
           stock: productData.stock,
@@ -203,33 +229,44 @@ export const importProductsFromFile = async (worksheet) => {
           finalPrice,
         };
 
-        // Only update optional fields if provided
-        if (productData.brand !== undefined && productData.brand !== "") {
+        // Update optional fields if provided (even if empty string)
+        if (productData.brand !== undefined && productData.brand !== null) {
           updateData.brand = productData.brand;
         }
-        if (productData.alcoholPercentage !== undefined) {
+        if (productData.alcoholPercentage !== undefined && productData.alcoholPercentage !== null) {
           updateData.alcoholPercentage = productData.alcoholPercentage;
         }
-        if (productData.volume !== undefined) {
+        if (productData.volume !== undefined && productData.volume !== null) {
           updateData.volume = productData.volume;
         }
-        if (productData.imageUrl !== undefined) {
+        if (productData.imageUrl !== undefined && productData.imageUrl !== null) {
           updateData.imageUrl = productData.imageUrl;
         }
-        if (productData.tag !== undefined) {
+        if (productData.tag !== undefined && productData.tag !== null) {
           updateData.tag = productData.tag;
         }
         if (productData.isRecommended !== undefined) {
           updateData.isRecommended = productData.isRecommended;
         }
 
-        await Product.findByIdAndUpdate(
+        // Update the product and ensure it's saved
+        const updatedProduct = await Product.findByIdAndUpdate(
           existingProduct._id,
           updateData,
           { new: true, runValidators: true }
         );
 
-        results.updated++;
+        if (updatedProduct) {
+          console.log(`✅ Updated product: ${updatedProduct.name} (ID: ${updatedProduct._id})`);
+          results.updated++;
+        } else {
+          console.error(`❌ Failed to update product: ${existingProduct._id}`);
+          results.errors.push({
+            row: rowNumber,
+            product: productData.name,
+            error: "Failed to update product in database",
+          });
+        }
       } else {
         // Create new product
         // Calculate discount and final price
@@ -237,24 +274,75 @@ export const importProductsFromFile = async (worksheet) => {
         const discountAmount = (productData.price * discountPercent) / 100;
         const finalPrice = productData.price - discountAmount;
 
-        const newProduct = await Product.create({
-          name: productData.name,
-          category: productData.category,
-          brand: productData.brand || "",
-          price: productData.price,
-          discountPercent: discountPercent,
-          discountAmount,
-          finalPrice,
-          stock: productData.stock,
-          alcoholPercentage: productData.alcoholPercentage || undefined,
-          volume: productData.volume || "",
-          imageUrl: productData.imageUrl || "",
-          tag: productData.tag || "",
-          isRecommended: productData.isRecommended || false,
+        // Double-check that product doesn't exist by name (to prevent duplicates)
+        const duplicateCheck = await Product.findOne({
+          name: { $regex: new RegExp(`^${productData.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, "i") },
         });
 
-        console.log(`✅ Created product: ${newProduct.name}`);
-        results.created++;
+        if (duplicateCheck) {
+          console.log(`⚠️  Product with name "${productData.name}" already exists. Updating instead of creating.`);
+          // Update the existing product instead
+          const discountPercent = productData.discountPercent || duplicateCheck.discountPercent || 0;
+          const discountAmount = (productData.price * discountPercent) / 100;
+          const finalPrice = productData.price - discountAmount;
+
+          const updateData = {
+            name: productData.name,
+            category: productData.category,
+            price: productData.price,
+            stock: productData.stock,
+            discountPercent,
+            discountAmount,
+            finalPrice,
+          };
+
+          if (productData.brand !== undefined && productData.brand !== null) {
+            updateData.brand = productData.brand;
+          }
+          if (productData.alcoholPercentage !== undefined && productData.alcoholPercentage !== null) {
+            updateData.alcoholPercentage = productData.alcoholPercentage;
+          }
+          if (productData.volume !== undefined && productData.volume !== null) {
+            updateData.volume = productData.volume;
+          }
+          if (productData.imageUrl !== undefined && productData.imageUrl !== null) {
+            updateData.imageUrl = productData.imageUrl;
+          }
+          if (productData.tag !== undefined && productData.tag !== null) {
+            updateData.tag = productData.tag;
+          }
+          if (productData.isRecommended !== undefined) {
+            updateData.isRecommended = productData.isRecommended;
+          }
+
+          await Product.findByIdAndUpdate(
+            duplicateCheck._id,
+            updateData,
+            { new: true, runValidators: true }
+          );
+
+          console.log(`✅ Updated existing product: ${productData.name} (ID: ${duplicateCheck._id})`);
+          results.updated++;
+        } else {
+          const newProduct = await Product.create({
+            name: productData.name,
+            category: productData.category,
+            brand: productData.brand || "",
+            price: productData.price,
+            discountPercent: discountPercent,
+            discountAmount,
+            finalPrice,
+            stock: productData.stock,
+            alcoholPercentage: productData.alcoholPercentage || undefined,
+            volume: productData.volume || "",
+            imageUrl: productData.imageUrl || "",
+            tag: productData.tag || "",
+            isRecommended: productData.isRecommended || false,
+          });
+
+          console.log(`✅ Created new product: ${newProduct.name} (ID: ${newProduct._id})`);
+          results.created++;
+        }
       }
     } catch (error) {
       console.error(`❌ Error processing row ${rowNumber}:`, error.message);
@@ -311,18 +399,23 @@ const parseProductRow = (row, rowNumber) => {
     return defaultValue;
   };
 
+  // Product ID is in column 1 (optional), shift all other columns by 1
+  const productId = getCellValue(1);
+  const productIdString = productId ? productId.toString().trim() : null;
+
   return {
-    name: getCellValue(1)?.toString().trim() || null,
-    category: getCellValue(2)?.toString().trim().toLowerCase() || null,
-    brand: getCellValue(3)?.toString().trim() || "",
-    price: parseNumber(getCellValue(4)),
-    discountPercent: parseNumber(getCellValue(5), 0),
-    stock: parseNumber(getCellValue(6), 0),
-    alcoholPercentage: parseNumber(getCellValue(7)),
-    volume: getCellValue(8)?.toString().trim() || "",
-    imageUrl: getCellValue(9)?.toString().trim() || "",
-    tag: getCellValue(10)?.toString().trim() || "",
-    isRecommended: parseBoolean(getCellValue(11)),
+    productId: productIdString || null,
+    name: getCellValue(2)?.toString().trim() || null,
+    category: getCellValue(3)?.toString().trim().toLowerCase() || null,
+    brand: getCellValue(4)?.toString().trim() || "",
+    price: parseNumber(getCellValue(5)),
+    discountPercent: parseNumber(getCellValue(6), 0),
+    stock: parseNumber(getCellValue(7), 0),
+    alcoholPercentage: parseNumber(getCellValue(8)),
+    volume: getCellValue(9)?.toString().trim() || "",
+    imageUrl: getCellValue(10)?.toString().trim() || "",
+    tag: getCellValue(11)?.toString().trim() || "",
+    isRecommended: parseBoolean(getCellValue(12)),
   };
 };
 
