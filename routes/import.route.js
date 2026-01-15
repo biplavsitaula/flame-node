@@ -3,15 +3,13 @@ import {
   downloadProductTemplate,
   importProductsFromExcel,
 } from "../controller/import.controller.js";
-import { authenticate, checkSuperAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Protected routes - Download template (admin and super_admin)
-router.get("/import/template", authenticate, downloadProductTemplate);
+// Public routes - Download template
+router.get("/import/template", downloadProductTemplate);
 
-// Protected routes - Import products (super_admin only)
-router.post("/import/products", authenticate, checkSuperAdmin, importProductsFromExcel);
+// Public routes - Import products
+router.post("/import/products", importProductsFromExcel);
 
 export default router;
-
