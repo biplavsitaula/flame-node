@@ -102,6 +102,11 @@ export const importProductsFromFile = async (worksheet) => {
   const totalRows = worksheet.rowCount;
   console.log(`📊 Total rows in worksheet: ${totalRows}`);
 
+  // Detect column structure from header row
+  const headerRow = worksheet.getRow(1);
+  const columnOffsets = detectColumnStructure(headerRow);
+  console.log(`📋 Column structure detected:`, columnOffsets);
+
   // Skip header row (row 1), start from row 2
   for (let rowNumber = 2; rowNumber <= totalRows; rowNumber++) {
     try {
@@ -113,7 +118,7 @@ export const importProductsFromFile = async (worksheet) => {
         continue;
       }
 
-      const productData = parseProductRow(row, rowNumber);
+      const productData = parseProductRow(row, rowNumber, columnOffsets);
       console.log(`📝 Parsing row ${rowNumber}:`, productData);
 
       // Validate required fields
@@ -389,9 +394,51 @@ export const importProductsFromFile = async (worksheet) => {
 };
 
 /**
+ * Detect if Product ID column exists by checking header row
+ */
+const detectColumnStructure = (headerRow) => {
+  const getCellValue = (index) => {
+    try {
+      const cell = headerRow.getCell(index);
+      if (!cell || cell.value === null || cell.value === undefined) {
+        return null;
+      }
+      return cell.value.toString().trim().toLowerCase();
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Check column structure by looking at first few columns
+  const firstCol = getCellValue(1);
+  const secondCol = getCellValue(2);
+  
+  // If first column is "name" or second column is "name", no Product ID column
+  // If first column contains "id" and second column is "name", has Product ID column
+  const hasProductId = firstCol && (firstCol.includes("product id") || firstCol.includes("id")) && 
+                       secondCol && secondCol.includes("name");
+  
+  console.log(`🔍 Column detection - Col1: "${firstCol}", Col2: "${secondCol}", hasProductId: ${hasProductId}`);
+  
+  return {
+    hasProductId,
+    nameOffset: hasProductId ? 2 : 1,
+    categoryOffset: hasProductId ? 3 : 2,
+    priceOffset: hasProductId ? 4 : 3,
+    stockOffset: hasProductId ? 5 : 4,
+    ratingOffset: hasProductId ? 7 : 6,
+    salesOffset: hasProductId ? 8 : 7,
+    isNewOffset: hasProductId ? 10 : 9,
+    volumeOffset: hasProductId ? 11 : 10,
+    alcoholOffset: hasProductId ? 12 : 11,
+    originOffset: hasProductId ? 13 : 12,
+  };
+};
+
+/**
  * Parse a single row from Excel worksheet
  */
-const parseProductRow = (row, rowNumber) => {
+const parseProductRow = (row, rowNumber, columnOffsets) => {
   const getCellValue = (index) => {
     try {
       const cell = row.getCell(index);
@@ -414,7 +461,7 @@ const parseProductRow = (row, rowNumber) => {
     if (typeof value === "boolean") return value;
     if (typeof value === "string") {
       const lower = value.toLowerCase().trim();
-      return lower === "true" || lower === "yes" || lower === "1";
+      return lower === "true" || lower === "yes" || lower === "1" || lower === "y";
     }
     return Boolean(value);
   };
@@ -423,38 +470,36 @@ const parseProductRow = (row, rowNumber) => {
     if (value === null || value === undefined) return defaultValue;
     if (typeof value === "number") return value;
     if (typeof value === "string") {
-      const parsed = parseFloat(value.trim());
+      // Remove currency symbols and commas
+      const cleaned = value.replace(/[Rs.,\s]/gi, "").trim();
+      const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? defaultValue : parsed;
     }
     return defaultValue;
   };
 
-  // Parse columns according to the new template structure:
-  // 1: Product ID, 2: Name, 3: Category, 4: Price, 5: Stock, 6: Status (ignored), 
-  // 7: Rating, 8: Sales, 9: In Stock (ignored), 10: Is New, 11: Volume, 
-  // 12: Alcohol Co, 13: Origin, 14: Created Date (ignored)
-  
-  const productId = getCellValue(1);
+  // Get Product ID if column exists
+  const productId = columnOffsets.hasProductId ? getCellValue(1) : null;
   const productIdString = productId ? productId.toString().trim() : null;
 
   // Parse "Is New" - map to isRecommended
-  const isNew = parseBoolean(getCellValue(10));
+  const isNew = parseBoolean(getCellValue(columnOffsets.isNewOffset));
   
   // Parse "Origin" - map to tag field
-  const origin = getCellValue(13)?.toString().trim() || "";
+  const origin = getCellValue(columnOffsets.originOffset)?.toString().trim() || "";
 
   return {
     productId: productIdString || null,
-    name: getCellValue(2)?.toString().trim() || null,
-    category: getCellValue(3)?.toString().trim().toLowerCase() || null,
+    name: getCellValue(columnOffsets.nameOffset)?.toString().trim() || null,
+    category: getCellValue(columnOffsets.categoryOffset)?.toString().trim().toLowerCase() || null,
     brand: "", // Brand not in template, keep empty
-    price: parseNumber(getCellValue(4)),
+    price: parseNumber(getCellValue(columnOffsets.priceOffset)),
     discountPercent: 0, // Discount not in template, default to 0
-    stock: parseNumber(getCellValue(5), 0),
-    rating: parseNumber(getCellValue(7), 0), // Rating from column 7
-    totalSold: parseNumber(getCellValue(8), 0), // Sales from column 8
-    alcoholPercentage: parseNumber(getCellValue(12)), // Alcohol Co from column 12
-    volume: getCellValue(11)?.toString().trim() || "", // Volume from column 11
+    stock: parseNumber(getCellValue(columnOffsets.stockOffset), 0),
+    rating: parseNumber(getCellValue(columnOffsets.ratingOffset), 0),
+    totalSold: parseNumber(getCellValue(columnOffsets.salesOffset), 0),
+    alcoholPercentage: parseNumber(getCellValue(columnOffsets.alcoholOffset)),
+    volume: getCellValue(columnOffsets.volumeOffset)?.toString().trim() || "",
     imageUrl: "", // Image URL not in template
     tag: origin, // Origin maps to tag
     isRecommended: isNew, // Is New maps to isRecommended
