@@ -86,20 +86,38 @@ export const importProductsFromFile = async (worksheet) => {
     errors: [],
   };
 
-  // Skip header row (row 1)
-  let rowNumber = 2;
+  // Get total row count
+  const totalRows = worksheet.rowCount;
+  console.log(`📊 Total rows in worksheet: ${totalRows}`);
 
-  for (const row of worksheet.getRows(2)) {
+  // Skip header row (row 1), start from row 2
+  for (let rowNumber = 2; rowNumber <= totalRows; rowNumber++) {
     try {
+      const row = worksheet.getRow(rowNumber);
+      
+      // Skip empty rows
+      if (!row || !row.hasValues) {
+        console.log(`⏭️  Skipping empty row ${rowNumber}`);
+        continue;
+      }
+
       const productData = parseProductRow(row, rowNumber);
+      console.log(`📝 Parsing row ${rowNumber}:`, productData);
 
       // Validate required fields
       if (!productData.name || !productData.category || productData.price === undefined || productData.stock === undefined) {
+        const missingFields = [];
+        if (!productData.name) missingFields.push("Name");
+        if (!productData.category) missingFields.push("Category");
+        if (productData.price === undefined) missingFields.push("Price");
+        if (productData.stock === undefined) missingFields.push("Stock");
+        
         results.errors.push({
           row: rowNumber,
-          error: "Missing required fields: Name, Category, Price, or Stock",
+          error: `Missing required fields: ${missingFields.join(", ")}`,
+          data: productData,
         });
-        rowNumber++;
+        console.log(`❌ Row ${rowNumber} validation failed: Missing ${missingFields.join(", ")}`);
         continue;
       }
 
@@ -110,54 +128,54 @@ export const importProductsFromFile = async (worksheet) => {
           product: productData.name,
           error: `Invalid category: ${productData.category}. Valid categories: ${validCategories.join(", ")}`,
         });
-        rowNumber++;
+        console.log(`❌ Row ${rowNumber} validation failed: Invalid category ${productData.category}`);
         continue;
       }
 
       // Validate price
-      if (productData.price < 0) {
+      if (productData.price < 0 || isNaN(productData.price)) {
         results.errors.push({
           row: rowNumber,
           product: productData.name,
-          error: "Price must be positive",
+          error: `Price must be a positive number. Got: ${productData.price}`,
         });
-        rowNumber++;
+        console.log(`❌ Row ${rowNumber} validation failed: Invalid price ${productData.price}`);
         continue;
       }
 
       // Validate stock
-      if (productData.stock < 0) {
+      if (productData.stock < 0 || isNaN(productData.stock)) {
         results.errors.push({
           row: rowNumber,
           product: productData.name,
-          error: "Stock must be positive",
+          error: `Stock must be a positive number. Got: ${productData.stock}`,
         });
-        rowNumber++;
+        console.log(`❌ Row ${rowNumber} validation failed: Invalid stock ${productData.stock}`);
         continue;
       }
 
       // Validate discount percent
-      if (productData.discountPercent !== undefined) {
-        if (productData.discountPercent < 0 || productData.discountPercent > 100) {
+      if (productData.discountPercent !== undefined && productData.discountPercent !== null) {
+        if (productData.discountPercent < 0 || productData.discountPercent > 100 || isNaN(productData.discountPercent)) {
           results.errors.push({
             row: rowNumber,
             product: productData.name,
-            error: "Discount Percent must be between 0 and 100",
+            error: `Discount Percent must be between 0 and 100. Got: ${productData.discountPercent}`,
           });
-          rowNumber++;
+          console.log(`❌ Row ${rowNumber} validation failed: Invalid discount percent ${productData.discountPercent}`);
           continue;
         }
       }
 
       // Validate alcohol percentage
-      if (productData.alcoholPercentage !== undefined) {
-        if (productData.alcoholPercentage < 0 || productData.alcoholPercentage > 100) {
+      if (productData.alcoholPercentage !== undefined && productData.alcoholPercentage !== null) {
+        if (productData.alcoholPercentage < 0 || productData.alcoholPercentage > 100 || isNaN(productData.alcoholPercentage)) {
           results.errors.push({
             row: rowNumber,
             product: productData.name,
-            error: "Alcohol Percentage must be between 0 and 100",
+            error: `Alcohol Percentage must be between 0 and 100. Got: ${productData.alcoholPercentage}`,
           });
-          rowNumber++;
+          console.log(`❌ Row ${rowNumber} validation failed: Invalid alcohol percentage ${productData.alcoholPercentage}`);
           continue;
         }
       }
@@ -219,24 +237,36 @@ export const importProductsFromFile = async (worksheet) => {
         const discountAmount = (productData.price * discountPercent) / 100;
         const finalPrice = productData.price - discountAmount;
 
-        await Product.create({
-          ...productData,
+        const newProduct = await Product.create({
+          name: productData.name,
+          category: productData.category,
+          brand: productData.brand || "",
+          price: productData.price,
+          discountPercent: discountPercent,
           discountAmount,
           finalPrice,
+          stock: productData.stock,
+          alcoholPercentage: productData.alcoholPercentage || undefined,
+          volume: productData.volume || "",
+          imageUrl: productData.imageUrl || "",
+          tag: productData.tag || "",
+          isRecommended: productData.isRecommended || false,
         });
 
+        console.log(`✅ Created product: ${newProduct.name}`);
         results.created++;
       }
     } catch (error) {
+      console.error(`❌ Error processing row ${rowNumber}:`, error.message);
       results.errors.push({
         row: rowNumber,
         error: error.message || "Unknown error",
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
       });
     }
-
-    rowNumber++;
   }
 
+  console.log(`📊 Import summary: ${results.created} created, ${results.updated} updated, ${results.errors.length} errors`);
   return results;
 };
 
@@ -245,11 +275,20 @@ export const importProductsFromFile = async (worksheet) => {
  */
 const parseProductRow = (row, rowNumber) => {
   const getCellValue = (index) => {
-    const cell = row.getCell(index);
-    if (!cell || cell.value === null || cell.value === undefined) {
+    try {
+      const cell = row.getCell(index);
+      if (!cell || cell.value === null || cell.value === undefined || cell.value === "") {
+        return null;
+      }
+      // Handle formula cells
+      if (cell.type === "formula") {
+        return cell.result || null;
+      }
+      return cell.value;
+    } catch (error) {
+      console.warn(`⚠️  Error reading cell ${index} in row ${rowNumber}:`, error.message);
       return null;
     }
-    return cell.value;
   };
 
   const parseBoolean = (value) => {

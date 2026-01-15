@@ -153,20 +153,38 @@ export const importProductsFromExcel = [
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(req.file.buffer);
 
+      // Log available worksheet names for debugging
+      const worksheetNames = workbook.worksheets.map((ws) => ws.name);
+      console.log("📋 Available worksheets:", worksheetNames);
+
       const worksheet = workbook.getWorksheet("Products");
       if (!worksheet) {
         return res.status(400).json({
           success: false,
-          message: "Worksheet named 'Products' not found in the Excel file. Please ensure the worksheet is named 'Products'.",
+          message: `Worksheet named 'Products' not found in the Excel file. Available worksheets: ${worksheetNames.join(", ")}. Please ensure the worksheet is named 'Products'.`,
         });
       }
 
       // Check if worksheet has data
-      if (worksheet.rowCount < 2) {
+      const rowCount = worksheet.rowCount;
+      console.log(`📊 Worksheet 'Products' has ${rowCount} rows`);
+      
+      if (rowCount < 2) {
         return res.status(400).json({
           success: false,
           message: "Excel file is empty. Please add product data to the 'Products' worksheet.",
         });
+      }
+
+      // Log first few rows for debugging
+      console.log("📝 First 3 rows preview:");
+      for (let i = 1; i <= Math.min(3, rowCount); i++) {
+        const row = worksheet.getRow(i);
+        const values = [];
+        row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+          values.push(`Col${colNumber}: ${cell.value}`);
+        });
+        console.log(`  Row ${i}:`, values.join(", "));
       }
 
       const result = await importProductsFromFile(worksheet);
