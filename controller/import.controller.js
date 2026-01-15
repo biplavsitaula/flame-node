@@ -169,13 +169,25 @@ export const importProductsFromExcel = [
       const worksheetNames = workbook.worksheets.map((ws) => ws.name);
       console.log("📋 Available worksheets:", worksheetNames);
 
-      const worksheet = workbook.getWorksheet("Products");
+      // Try to get "Products" worksheet first, then "Sheet1", then first available worksheet
+      let worksheet = workbook.getWorksheet("Products");
+      if (!worksheet) {
+        worksheet = workbook.getWorksheet("Sheet1");
+        console.log("⚠️  'Products' worksheet not found, using 'Sheet1'");
+      }
+      if (!worksheet && workbook.worksheets.length > 0) {
+        worksheet = workbook.worksheets[0];
+        console.log(`⚠️  Using first available worksheet: '${worksheet.name}'`);
+      }
+      
       if (!worksheet) {
         return res.status(400).json({
           success: false,
-          message: `Worksheet named 'Products' not found in the Excel file. Available worksheets: ${worksheetNames.join(", ")}. Please ensure the worksheet is named 'Products'.`,
+          message: `No worksheets found in the Excel file. Available worksheets: ${worksheetNames.join(", ")}.`,
         });
       }
+      
+      console.log(`✅ Using worksheet: '${worksheet.name}'`);
 
       // Check if worksheet has data
       const rowCount = worksheet.rowCount;
