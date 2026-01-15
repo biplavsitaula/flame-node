@@ -20,7 +20,6 @@ const validCategories = [
 export const generateProductTemplate = () => {
   return {
     headers: [
-      "Product ID",
       "Name",
       "Category",
       "Price",
@@ -37,26 +36,24 @@ export const generateProductTemplate = () => {
     ],
     sampleRows: [
       [
-        "",
         "Johnnie Walker Black Label",
         "whiskey",
-        2500,
+        "Rs. 2500.00",
         50,
         "In Stock",
         4.5,
         120,
         "Yes",
-        "Yes",
+        "No",
         "750ml",
         40,
         "Scotland",
         "",
       ],
       [
-        "",
         "Absolut Vodka",
         "vodka",
-        1800,
+        "Rs. 1800.00",
         75,
         "In Stock",
         4.2,
@@ -69,10 +66,9 @@ export const generateProductTemplate = () => {
         "",
       ],
       [
-        "",
         "Bacardi White Rum",
         "rum",
-        1200,
+        "Rs. 1200.00",
         100,
         "In Stock",
         4.0,
@@ -430,26 +426,33 @@ const detectColumnStructure = (headerRow) => {
   // Check column structure by looking at first few columns
   const firstCol = getCellValue(1);
   const secondCol = getCellValue(2);
+  const thirdCol = getCellValue(3);
   
-  // If first column is "name" or second column is "name", no Product ID column
-  // If first column contains "id" and second column is "name", has Product ID column
+  // Default structure (no Product ID): Name | Category | Price | Stock | ...
+  // If first column is "name" and second is "category", no Product ID column
+  // If first column contains "id" and second is "name", has Product ID column
   const hasProductId = firstCol && (firstCol.includes("product id") || firstCol.includes("id")) && 
                        secondCol && secondCol.includes("name");
   
-  console.log(`🔍 Column detection - Col1: "${firstCol}", Col2: "${secondCol}", hasProductId: ${hasProductId}`);
+  // If first column is "name", definitely no Product ID
+  const definitelyNoProductId = firstCol && firstCol.includes("name");
+  
+  const finalHasProductId = hasProductId && !definitelyNoProductId;
+  
+  console.log(`🔍 Column detection - Col1: "${firstCol}", Col2: "${secondCol}", Col3: "${thirdCol}", hasProductId: ${finalHasProductId}`);
   
   return {
-    hasProductId,
-    nameOffset: hasProductId ? 2 : 1,
-    categoryOffset: hasProductId ? 3 : 2,
-    priceOffset: hasProductId ? 4 : 3,
-    stockOffset: hasProductId ? 5 : 4,
-    ratingOffset: hasProductId ? 7 : 6,
-    salesOffset: hasProductId ? 8 : 7,
-    isNewOffset: hasProductId ? 10 : 9,
-    volumeOffset: hasProductId ? 11 : 10,
-    alcoholOffset: hasProductId ? 12 : 11,
-    originOffset: hasProductId ? 13 : 12,
+    hasProductId: finalHasProductId,
+    nameOffset: finalHasProductId ? 2 : 1,
+    categoryOffset: finalHasProductId ? 3 : 2,
+    priceOffset: finalHasProductId ? 4 : 3,
+    stockOffset: finalHasProductId ? 5 : 4,
+    ratingOffset: finalHasProductId ? 7 : 6,
+    salesOffset: finalHasProductId ? 8 : 7,
+    isNewOffset: finalHasProductId ? 10 : 9,
+    volumeOffset: finalHasProductId ? 11 : 10,
+    alcoholOffset: finalHasProductId ? 12 : 11,
+    originOffset: finalHasProductId ? 13 : 12,
   };
 };
 
@@ -510,9 +513,9 @@ const parseProductRow = (row, rowNumber, columnOffsets) => {
     return value.toString().trim().toLowerCase() || null;
   };
 
-  // Get Product ID if column exists
-  const productId = columnOffsets.hasProductId ? getCellValue(1) : null;
-  const productIdString = productId ? productId.toString().trim() : null;
+  // Get Product ID if column exists (not in current template structure)
+  const productId = null; // No Product ID column in current template
+  const productIdString = null;
 
   // Parse "Is New" - map to isRecommended
   const isNew = parseBoolean(getCellValue(columnOffsets.isNewOffset));
