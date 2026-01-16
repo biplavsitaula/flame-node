@@ -9,12 +9,12 @@ const FeatureImageSchema = new mongoose.Schema(
     },
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: false,
       trim: true,
     },
     description: {
       type: String,
-      required: [true, "Description is required"],
+      required: false,
       trim: true,
     },
     tag: {
@@ -24,7 +24,7 @@ const FeatureImageSchema = new mongoose.Schema(
     },
     ctaLink: {
       type: String,
-      required: [true, "CTA Link is required"],
+      required: false,
       trim: true,
     },
     isActive: {
@@ -48,4 +48,5 @@ FeatureImageSchema.index({ isActive: 1, order: 1 });
 FeatureImageSchema.index({ createdAt: -1 });
 
 export default mongoose.model("FeatureImage", FeatureImageSchema);
+
 
