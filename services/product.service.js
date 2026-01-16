@@ -263,32 +263,3 @@ export const updateProductRating = async (productId) => {
     { new: true }
   );
 };
-
-/**
- * Get all unique brands from products
- */
-export const getAllBrands = async () => {
-  // Get distinct brands that are not empty or null
-  const brands = await Product.distinct("brand", {
-    brand: { $exists: true, $ne: null, $ne: "" },
-  });
-
-  // Filter out empty strings and sort alphabetically
-  const uniqueBrands = brands
-    .filter((brand) => brand && brand.trim() !== "")
-    .map((brand) => brand.trim())
-    .sort();
-
-  // Get product count per brand
-  const brandsWithCount = await Promise.all(
-    uniqueBrands.map(async (brand) => {
-      const count = await Product.countDocuments({ brand: brand });
-      return {
-        name: brand,
-        productCount: count,
-      };
-    })
-  );
-
-  return brandsWithCount;
-};
