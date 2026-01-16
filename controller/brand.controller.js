@@ -5,7 +5,7 @@ import {
   updateBrand,
   deleteBrand,
 } from "../services/brand.service.js";
-import asyncHandler from "../utils/asyncHandler.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 /**
  * Get all brands
@@ -110,6 +110,7 @@ export const deleteBrandById = asyncHandler(async (req, res) => {
     message: result.message || "Brand deleted successfully",
   });
 });
+
 
 
 
