@@ -11,12 +11,21 @@ import { asyncHandler } from "../utils/asyncHandler.js";
  * Get all brands
  */
 export const fetchAllBrands = asyncHandler(async (req, res) => {
-  const brands = await getAllBrands(req.query);
-  res.status(200).json({
-    success: true,
-    message: "Brands fetched successfully",
-    data: brands,
-  });
+  console.log("📥 GET /products/brands - Request received");
+  console.log("📥 Query params:", req.query);
+  
+  try {
+    const brands = await getAllBrands(req.query);
+    console.log("📤 Returning brands:", brands.length);
+    res.status(200).json({
+      success: true,
+      message: "Brands fetched successfully",
+      data: brands,
+    });
+  } catch (error) {
+    console.error("❌ Error in fetchAllBrands controller:", error);
+    throw error;
+  }
 });
 
 /**
