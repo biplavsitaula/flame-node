@@ -20,12 +20,21 @@ export const getAllBrands = async (query = {}) => {
 
   const brands = await Brand.find(filter).sort(sortOptions).lean();
 
-  // Get product count per brand
+  // Get product count per brand and ensure all fields are included
   const brandsWithCount = await Promise.all(
     brands.map(async (brand) => {
       const count = await Product.countDocuments({ brand: brand.name });
       return {
-        ...brand,
+        _id: brand._id,
+        name: brand.name,
+        logo: brand.logo || "",
+        description: brand.description || "",
+        website: brand.website || "",
+        isActive: brand.isActive !== undefined ? brand.isActive : true,
+        order: brand.order || 0,
+        createdAt: brand.createdAt,
+        updatedAt: brand.updatedAt,
+        __v: brand.__v || 0,
         productCount: count,
       };
     })
@@ -44,7 +53,16 @@ export const getBrandById = async (id) => {
   const productCount = await Product.countDocuments({ brand: brand.name });
 
   return {
-    ...brand,
+    _id: brand._id,
+    name: brand.name,
+    logo: brand.logo || "",
+    description: brand.description || "",
+    website: brand.website || "",
+    isActive: brand.isActive !== undefined ? brand.isActive : true,
+    order: brand.order || 0,
+    createdAt: brand.createdAt,
+    updatedAt: brand.updatedAt,
+    __v: brand.__v || 0,
     productCount,
   };
 };
@@ -59,7 +77,16 @@ export const getBrandByName = async (name) => {
   const productCount = await Product.countDocuments({ brand: brand.name });
 
   return {
-    ...brand,
+    _id: brand._id,
+    name: brand.name,
+    logo: brand.logo || "",
+    description: brand.description || "",
+    website: brand.website || "",
+    isActive: brand.isActive !== undefined ? brand.isActive : true,
+    order: brand.order || 0,
+    createdAt: brand.createdAt,
+    updatedAt: brand.updatedAt,
+    __v: brand.__v || 0,
     productCount,
   };
 };
@@ -155,6 +182,7 @@ export const deleteBrand = async (id) => {
   await Brand.findByIdAndDelete(id);
   return { message: `Brand "${brand.name}" deleted successfully` };
 };
+
 
 
 
