@@ -92,6 +92,10 @@ const ProductSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    description: {
+      type: String,
+      trim: true,
+    },
     isRecommended: {
       type: Boolean,
       default: false,
