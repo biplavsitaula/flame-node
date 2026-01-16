@@ -4,6 +4,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  getAllBrands,
 } from "../services/product.service.js";
 
 export const fetchAllProducts = async (req, res) => {
@@ -103,6 +104,22 @@ export const deleteProductById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Error deleting product",
+    });
+  }
+};
+
+export const fetchAllBrands = async (req, res) => {
+  try {
+    const brands = await getAllBrands();
+    res.status(200).json({
+      success: true,
+      message: "Brands fetched successfully",
+      data: brands,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error fetching brands",
     });
   }
 };
