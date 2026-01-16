@@ -48,3 +48,4 @@ BrandSchema.index({ createdAt: -1 });
 export default mongoose.model("Brand", BrandSchema);
 
 
+
