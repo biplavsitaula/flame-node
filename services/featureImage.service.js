@@ -20,7 +20,8 @@ export const getAllFeatureImages = async (query = {}) => {
 
   const featureImages = await FeatureImage.find(filter)
     .sort(sortOptions)
-    .lean();
+    .lean()
+    .exec();
 
   return featureImages;
 };
