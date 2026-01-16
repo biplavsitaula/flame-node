@@ -22,11 +22,6 @@ const FeatureImageSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
-    ctaLink: {
-      type: String,
-      required: false,
-      trim: true,
-    },
     isActive: {
       type: Boolean,
       default: true,
@@ -48,6 +43,7 @@ FeatureImageSchema.index({ isActive: 1, order: 1 });
 FeatureImageSchema.index({ createdAt: -1 });
 
 export default mongoose.model("FeatureImage", FeatureImageSchema);
+
 
 
 

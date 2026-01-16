@@ -41,7 +41,7 @@ export const fetchFeatureImageById = asyncHandler(async (req, res) => {
  */
 export const createNewFeatureImage = async (req, res) => {
   try {
-    const { imageUrl, name, description, tag, ctaLink, isActive, order } = req.body;
+    const { imageUrl, name, description, tag, isActive, order } = req.body;
 
     // Validate required fields with better error messages
     const missingFields = [];
@@ -53,9 +53,6 @@ export const createNewFeatureImage = async (req, res) => {
     }
     if (!description || (typeof description === 'string' && description.trim() === '')) {
       missingFields.push('description');
-    }
-    if (!ctaLink || (typeof ctaLink === 'string' && ctaLink.trim() === '')) {
-      missingFields.push('ctaLink');
     }
 
     if (missingFields.length > 0) {
@@ -70,7 +67,6 @@ export const createNewFeatureImage = async (req, res) => {
       name: name.trim(),
       description: description.trim(),
       tag: tag ? tag.trim() : "",
-      ctaLink: ctaLink.trim(),
       isActive: isActive !== undefined ? isActive : true,
       order: order || 0,
     });
@@ -125,15 +121,6 @@ export const updateExistingFeatureImage = async (req, res) => {
         });
       }
       updateData.description = updateData.description.trim();
-    }
-    if (updateData.ctaLink !== undefined) {
-      if (!updateData.ctaLink || (typeof updateData.ctaLink === 'string' && updateData.ctaLink.trim() === '')) {
-        return res.status(400).json({
-          success: false,
-          message: "ctaLink cannot be empty",
-        });
-      }
-      updateData.ctaLink = updateData.ctaLink.trim();
     }
     if (updateData.tag !== undefined && updateData.tag !== null) {
       updateData.tag = updateData.tag.trim();

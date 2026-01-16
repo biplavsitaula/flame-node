@@ -11,7 +11,6 @@ const featureImagesData = [
     name: "Premium Whiskey Collection",
     description: "Discover the finest aged spirits from around the world",
     tag: "Shop Now",
-    ctaLink: "/products?category=whiskey",
     isActive: true,
     order: 1,
   },
@@ -20,7 +19,6 @@ const featureImagesData = [
     name: "Vodka Selection",
     description: "Premium vodka brands for every occasion",
     tag: "Explore",
-    ctaLink: "/products?category=vodka",
     isActive: true,
     order: 2,
   },
@@ -29,7 +27,6 @@ const featureImagesData = [
     name: "Rum & Gin Collection",
     description: "Tropical flavors and classic spirits",
     tag: "Discover",
-    ctaLink: "/products?category=rum",
     isActive: true,
     order: 3,
   },
@@ -38,7 +35,6 @@ const featureImagesData = [
     name: "Champagne & Wine",
     description: "Celebrate with premium sparkling wines",
     tag: "Celebrate",
-    ctaLink: "/products?category=champagne",
     isActive: true,
     order: 4,
   },
@@ -47,7 +43,6 @@ const featureImagesData = [
     name: "Tequila & Cognac",
     description: "Premium aged spirits for connoisseurs",
     tag: "Explore",
-    ctaLink: "/products?category=tequila",
     isActive: true,
     order: 5,
   },
@@ -80,6 +75,7 @@ const seedFeatureImages = async () => {
 };
 
 seedFeatureImages();
+
 
 
 
