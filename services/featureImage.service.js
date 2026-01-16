@@ -9,6 +9,7 @@ export const getAllFeatureImages = async (query = {}) => {
   const filter = {};
 
   // Filter by active status
+  // If isActive is explicitly provided, use it; otherwise return all images
   if (isActive !== undefined) {
     filter.isActive = isActive === "true" || isActive === true;
   }
@@ -74,6 +75,7 @@ export const deleteFeatureImage = async (id) => {
   }
   return { message: "Feature image deleted successfully" };
 };
+
 
 
 

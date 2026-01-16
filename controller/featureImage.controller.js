@@ -5,47 +5,35 @@ import {
   updateFeatureImage,
   deleteFeatureImage,
 } from "../services/featureImage.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 /**
  * GET /feature-images
  * Get all feature images
+ * Query params: isActive (true/false), sortBy (default: "order"), sortOrder (default: "asc")
  */
-export const fetchAllFeatureImages = async (req, res) => {
-  try {
-    const featureImages = await getAllFeatureImages(req.query);
-    res.status(200).json({
-      success: true,
-      message: "Feature images fetched successfully",
-      data: featureImages,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message || "Error fetching feature images",
-    });
-  }
-};
+export const fetchAllFeatureImages = asyncHandler(async (req, res) => {
+  const featureImages = await getAllFeatureImages(req.query);
+  res.status(200).json({
+    success: true,
+    message: "Feature images fetched successfully",
+    data: featureImages,
+  });
+});
 
 /**
  * GET /feature-images/:id
  * Get feature image by ID
  */
-export const fetchFeatureImageById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const featureImage = await getFeatureImageById(id);
-    res.status(200).json({
-      success: true,
-      message: "Feature image fetched successfully",
-      data: featureImage,
-    });
-  } catch (error) {
-    res.status(404).json({
-      success: false,
-      message: error.message || "Feature image not found",
-    });
-  }
-};
+export const fetchFeatureImageById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const featureImage = await getFeatureImageById(id);
+  res.status(200).json({
+    success: true,
+    message: "Feature image fetched successfully",
+    data: featureImage,
+  });
+});
 
 /**
  * POST /feature-images
