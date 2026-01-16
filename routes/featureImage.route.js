@@ -22,3 +22,4 @@ router.delete("/feature-images/:id", authenticate, checkSuperAdmin, deleteFeatur
 export default router;
 
 
+

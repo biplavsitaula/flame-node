@@ -50,3 +50,4 @@ FeatureImageSchema.index({ createdAt: -1 });
 export default mongoose.model("FeatureImage", FeatureImageSchema);
 
 
+

@@ -55,20 +55,34 @@ export const createNewFeatureImage = async (req, res) => {
   try {
     const { imageUrl, name, description, tag, ctaLink, isActive, order } = req.body;
 
-    // Validate required fields
-    if (!imageUrl || !name || !description || !ctaLink) {
+    // Validate required fields with better error messages
+    const missingFields = [];
+    if (!imageUrl || (typeof imageUrl === 'string' && imageUrl.trim() === '')) {
+      missingFields.push('imageUrl');
+    }
+    if (!name || (typeof name === 'string' && name.trim() === '')) {
+      missingFields.push('name');
+    }
+    if (!description || (typeof description === 'string' && description.trim() === '')) {
+      missingFields.push('description');
+    }
+    if (!ctaLink || (typeof ctaLink === 'string' && ctaLink.trim() === '')) {
+      missingFields.push('ctaLink');
+    }
+
+    if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "imageUrl, name, description, and ctaLink are required",
+        message: `Missing required fields: ${missingFields.join(', ')}`,
       });
     }
 
     const featureImage = await createFeatureImage({
-      imageUrl,
-      name,
-      description,
-      tag: tag || "",
-      ctaLink,
+      imageUrl: imageUrl.trim(),
+      name: name.trim(),
+      description: description.trim(),
+      tag: tag ? tag.trim() : "",
+      ctaLink: ctaLink.trim(),
       isActive: isActive !== undefined ? isActive : true,
       order: order || 0,
     });
@@ -93,7 +107,51 @@ export const createNewFeatureImage = async (req, res) => {
 export const updateExistingFeatureImage = async (req, res) => {
   try {
     const { id } = req.params;
-    const featureImage = await updateFeatureImage(id, req.body);
+    const updateData = req.body;
+
+    // For update, only validate fields that are being updated
+    // If a field is provided, it must not be empty
+    if (updateData.imageUrl !== undefined) {
+      if (!updateData.imageUrl || (typeof updateData.imageUrl === 'string' && updateData.imageUrl.trim() === '')) {
+        return res.status(400).json({
+          success: false,
+          message: "imageUrl cannot be empty",
+        });
+      }
+      updateData.imageUrl = updateData.imageUrl.trim();
+    }
+    if (updateData.name !== undefined) {
+      if (!updateData.name || (typeof updateData.name === 'string' && updateData.name.trim() === '')) {
+        return res.status(400).json({
+          success: false,
+          message: "name cannot be empty",
+        });
+      }
+      updateData.name = updateData.name.trim();
+    }
+    if (updateData.description !== undefined) {
+      if (!updateData.description || (typeof updateData.description === 'string' && updateData.description.trim() === '')) {
+        return res.status(400).json({
+          success: false,
+          message: "description cannot be empty",
+        });
+      }
+      updateData.description = updateData.description.trim();
+    }
+    if (updateData.ctaLink !== undefined) {
+      if (!updateData.ctaLink || (typeof updateData.ctaLink === 'string' && updateData.ctaLink.trim() === '')) {
+        return res.status(400).json({
+          success: false,
+          message: "ctaLink cannot be empty",
+        });
+      }
+      updateData.ctaLink = updateData.ctaLink.trim();
+    }
+    if (updateData.tag !== undefined && updateData.tag !== null) {
+      updateData.tag = updateData.tag.trim();
+    }
+
+    const featureImage = await updateFeatureImage(id, updateData);
     res.status(200).json({
       success: true,
       message: "Feature image updated successfully",
@@ -126,5 +184,6 @@ export const deleteFeatureImageById = async (req, res) => {
     });
   }
 };
+
 
 
