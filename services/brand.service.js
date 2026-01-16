@@ -5,42 +5,55 @@ import Product from "../models/product.models.js";
  * Get all brands
  */
 export const getAllBrands = async (query = {}) => {
-  const { isActive, sortBy = "order", sortOrder = "asc" } = query;
+  try {
+    const { isActive, sortBy = "order", sortOrder = "asc" } = query;
 
-  const filter = {};
+    const filter = {};
 
-  // Filter by active status
-  if (isActive !== undefined) {
-    filter.isActive = isActive === "true" || isActive === true;
+    // Filter by active status - only apply if explicitly provided
+    // If not provided, return all brands (both active and inactive)
+    if (isActive !== undefined) {
+      filter.isActive = isActive === "true" || isActive === true;
+    }
+
+    // Sort
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+    // Debug logging
+    console.log("🔍 Fetching brands with filter:", JSON.stringify(filter));
+    console.log("🔍 Sort options:", JSON.stringify(sortOptions));
+
+    const brands = await Brand.find(filter).sort(sortOptions).lean();
+
+    console.log(`📊 Found ${brands.length} brands in database`);
+
+    // Get product count per brand and ensure all fields are included
+    const brandsWithCount = await Promise.all(
+      brands.map(async (brand) => {
+        const count = await Product.countDocuments({ brand: brand.name });
+        return {
+          _id: brand._id,
+          name: brand.name,
+          logo: brand.logo || "",
+          description: brand.description || "",
+          website: brand.website || "",
+          isActive: brand.isActive !== undefined ? brand.isActive : true,
+          order: brand.order || 0,
+          createdAt: brand.createdAt,
+          updatedAt: brand.updatedAt,
+          __v: brand.__v || 0,
+          productCount: count,
+        };
+      })
+    );
+
+    console.log(`✅ Returning ${brandsWithCount.length} brands with product counts`);
+    return brandsWithCount;
+  } catch (error) {
+    console.error("❌ Error in getAllBrands:", error);
+    throw error;
   }
-
-  // Sort
-  const sortOptions = {};
-  sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
-
-  const brands = await Brand.find(filter).sort(sortOptions).lean();
-
-  // Get product count per brand and ensure all fields are included
-  const brandsWithCount = await Promise.all(
-    brands.map(async (brand) => {
-      const count = await Product.countDocuments({ brand: brand.name });
-      return {
-        _id: brand._id,
-        name: brand.name,
-        logo: brand.logo || "",
-        description: brand.description || "",
-        website: brand.website || "",
-        isActive: brand.isActive !== undefined ? brand.isActive : true,
-        order: brand.order || 0,
-        createdAt: brand.createdAt,
-        updatedAt: brand.updatedAt,
-        __v: brand.__v || 0,
-        productCount: count,
-      };
-    })
-  );
-
-  return brandsWithCount;
 };
 
 /**
