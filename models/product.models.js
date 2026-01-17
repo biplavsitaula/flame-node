@@ -96,6 +96,16 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    subCategory: {
+      type: String,
+      trim: true,
+      index: true,
+    },
+    originType: {
+      type: String,
+      trim: true,
+      index: true,
+    },
     isRecommended: {
       type: Boolean,
       default: false,
@@ -161,9 +171,11 @@ ProductSchema.pre("findOneAndUpdate", async function () {
 });
 
 // Indexes for better query performance
-ProductSchema.index({ name: "text", category: "text", brand: "text" });
+ProductSchema.index({ name: "text", category: "text", brand: "text", subCategory: "text", originType: "text" });
 ProductSchema.index({ totalSold: -1 });
 ProductSchema.index({ reviewCount: -1 });
 ProductSchema.index({ rating: -1 });
+ProductSchema.index({ subCategory: 1 });
+ProductSchema.index({ originType: 1 });
 
 export default mongoose.model("Product", ProductSchema);

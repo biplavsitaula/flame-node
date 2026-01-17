@@ -337,7 +337,42 @@ const productsData = [
   },
 ];
 
-// Calculate discountAmount and finalPrice for each product
+// Helper function to assign subCategory based on category and product name
+const getSubCategory = (category, name) => {
+  const cat = category.toLowerCase();
+  if (cat === "whiskey") {
+    if (name.includes("Macallan") || name.includes("Glenfiddich")) {
+      return "Single Malt";
+    } else if (name.includes("Jack Daniel")) {
+      return "Bourbon";
+    } else if (name.includes("Jameson")) {
+      return "Irish";
+    } else {
+      return "Blended";
+    }
+  } else if (cat === "vodka") {
+    return "Premium";
+  } else if (cat === "rum") {
+    return "Aged";
+  } else if (cat === "gin") {
+    return "London Dry";
+  } else if (cat === "tequila") {
+    return "Anejo";
+  } else if (cat === "cognac") {
+    return "VSOP";
+  } else if (cat === "champagne") {
+    return "Brut";
+  } else if (cat === "wine") {
+    return "Red";
+  } else if (cat === "beer") {
+    return "Lager";
+  } else if (cat === "brandy") {
+    return "Aged";
+  }
+  return "";
+};
+
+// Calculate discountAmount and finalPrice for each product, and add subCategory and originType
 const products = productsData.map((product) => {
   const discountAmount = (product.price * product.discountPercent) / 100;
   const finalPrice = product.price - discountAmount;
@@ -345,6 +380,8 @@ const products = productsData.map((product) => {
     ...product,
     discountAmount: Math.round(discountAmount * 100) / 100,
     finalPrice: Math.round(finalPrice * 100) / 100,
+    subCategory: getSubCategory(product.category, product.name),
+    originType: "Imported", // Most products are imported
   };
 });
 

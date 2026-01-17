@@ -34,6 +34,8 @@ export const getAllProducts = async (query = {}) => {
   const {
     search,
     category,
+    subCategory,
+    originType,
     status,
     sortBy = "createdAt",
     sortOrder = "desc",
@@ -50,12 +52,24 @@ export const getAllProducts = async (query = {}) => {
       { name: { $regex: search, $options: "i" } },
       { category: { $regex: search, $options: "i" } },
       { brand: { $regex: search, $options: "i" } },
+      { subCategory: { $regex: search, $options: "i" } },
+      { originType: { $regex: search, $options: "i" } },
     ];
   }
 
   // Category filter
   if (category) {
     filter.category = category;
+  }
+
+  // SubCategory filter
+  if (subCategory) {
+    filter.subCategory = subCategory;
+  }
+
+  // OriginType filter
+  if (originType) {
+    filter.originType = originType;
   }
 
   // Status filter
