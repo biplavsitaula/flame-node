@@ -32,6 +32,7 @@ export const generateProductTemplate = () => {
       "Volume",
       "Alcohol Co",
       "Origin",
+      "Image",
       "Created Date",
     ],
     sampleRows: [
@@ -48,6 +49,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -63,6 +65,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -78,6 +81,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -93,6 +97,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -108,6 +113,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -123,6 +129,7 @@ export const generateProductTemplate = () => {
         "750ml",
         43,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -138,6 +145,7 @@ export const generateProductTemplate = () => {
         "750ml",
         12.5,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -153,6 +161,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -168,6 +177,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
       [
@@ -183,6 +193,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
         "",
       ],
     ],
@@ -513,7 +524,7 @@ export const importProductsFromFile = async (worksheet) => {
 };
 
 /**
- * Detect if Product ID column exists by checking header row
+ * Detect column structure by finding column headers dynamically
  */
 const detectColumnStructure = (headerRow) => {
   const getCellValue = (index) => {
@@ -528,36 +539,53 @@ const detectColumnStructure = (headerRow) => {
     }
   };
 
-  // Check column structure by looking at first few columns
-  const firstCol = getCellValue(1);
-  const secondCol = getCellValue(2);
-  const thirdCol = getCellValue(3);
-  
-  // Default structure (no Product ID): Name | Category | Price | Stock | ...
-  // If first column is "name" and second is "category", no Product ID column
-  // If first column contains "id" and second is "name", has Product ID column
-  const hasProductId = firstCol && (firstCol.includes("product id") || firstCol.includes("id")) && 
-                       secondCol && secondCol.includes("name");
-  
-  // If first column is "name", definitely no Product ID
-  const definitelyNoProductId = firstCol && firstCol.includes("name");
-  
-  const finalHasProductId = hasProductId && !definitelyNoProductId;
-  
-  console.log(`🔍 Column detection - Col1: "${firstCol}", Col2: "${secondCol}", Col3: "${thirdCol}", hasProductId: ${finalHasProductId}`);
+  // Find column indices by searching for header names
+  const findColumnIndex = (searchTerms, startFrom = 1, maxColumns = 20) => {
+    for (let i = startFrom; i <= maxColumns; i++) {
+      const cellValue = getCellValue(i);
+      if (cellValue) {
+        for (const term of searchTerms) {
+          if (cellValue.includes(term)) {
+            return i;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  // Check if Product ID column exists
+  const productIdIndex = findColumnIndex(["product id", "id"], 1, 3);
+  const hasProductId = productIdIndex !== null;
+
+  // Find all column indices dynamically
+  const nameIndex = findColumnIndex(["name"], hasProductId ? 2 : 1) || (hasProductId ? 2 : 1);
+  const categoryIndex = findColumnIndex(["category"], nameIndex + 1) || (hasProductId ? 3 : 2);
+  const priceIndex = findColumnIndex(["price"], categoryIndex + 1) || (hasProductId ? 4 : 3);
+  const stockIndex = findColumnIndex(["stock"], priceIndex + 1) || (hasProductId ? 5 : 4);
+  const ratingIndex = findColumnIndex(["rating"], stockIndex + 1) || (hasProductId ? 7 : 6);
+  const salesIndex = findColumnIndex(["sales"], ratingIndex + 1) || (hasProductId ? 8 : 7);
+  const isNewIndex = findColumnIndex(["is new", "isnew"], salesIndex + 1) || (hasProductId ? 10 : 9);
+  const volumeIndex = findColumnIndex(["volume"], isNewIndex + 1) || (hasProductId ? 11 : 10);
+  const alcoholIndex = findColumnIndex(["alcohol co", "alcohol", "alcoholco"], volumeIndex + 1) || (hasProductId ? 12 : 11);
+  const originIndex = findColumnIndex(["origin"], alcoholIndex + 1) || (hasProductId ? 13 : 12);
+  const imageIndex = findColumnIndex(["image", "imageurl", "image url"], originIndex + 1) || (hasProductId ? 14 : 13);
+
+  console.log(`🔍 Column detection - Product ID: ${hasProductId}, Image column found at index: ${imageIndex}`);
   
   return {
-    hasProductId: finalHasProductId,
-    nameOffset: finalHasProductId ? 2 : 1,
-    categoryOffset: finalHasProductId ? 3 : 2,
-    priceOffset: finalHasProductId ? 4 : 3,
-    stockOffset: finalHasProductId ? 5 : 4,
-    ratingOffset: finalHasProductId ? 7 : 6,
-    salesOffset: finalHasProductId ? 8 : 7,
-    isNewOffset: finalHasProductId ? 10 : 9,
-    volumeOffset: finalHasProductId ? 11 : 10,
-    alcoholOffset: finalHasProductId ? 12 : 11,
-    originOffset: finalHasProductId ? 13 : 12,
+    hasProductId: hasProductId,
+    nameOffset: nameIndex,
+    categoryOffset: categoryIndex,
+    priceOffset: priceIndex,
+    stockOffset: stockIndex,
+    ratingOffset: ratingIndex,
+    salesOffset: salesIndex,
+    isNewOffset: isNewIndex,
+    volumeOffset: volumeIndex,
+    alcoholOffset: alcoholIndex,
+    originOffset: originIndex,
+    imageOffset: imageIndex,
   };
 };
 
@@ -657,6 +685,15 @@ const parseProductRow = (row, rowNumber, columnOffsets) => {
     });
   }
 
+  // Get image URL from Image column
+  const rawImageUrl = getCellValue(columnOffsets.imageOffset);
+  const imageUrl = rawImageUrl ? rawImageUrl.toString().trim() : "";
+
+  // Debug logging for image column
+  if (rowNumber <= 5) {
+    console.log(`🖼️  Row ${rowNumber} Image column (offset ${columnOffsets.imageOffset}): "${imageUrl}"`);
+  }
+
   return {
     productId: productIdString || null,
     name,
@@ -669,7 +706,7 @@ const parseProductRow = (row, rowNumber, columnOffsets) => {
     totalSold: parseNumber(getCellValue(columnOffsets.salesOffset), 0),
     alcoholPercentage: parseNumber(getCellValue(columnOffsets.alcoholOffset)),
     volume: getCellValue(columnOffsets.volumeOffset)?.toString().trim() || "",
-    imageUrl: "", // Image URL not in template
+    imageUrl: imageUrl, // Image URL from Image column
     tag: origin, // Origin maps to tag
     isRecommended: isNew, // Is New maps to isRecommended
     // Status, In Stock, Created Date are ignored (calculated/auto-generated)

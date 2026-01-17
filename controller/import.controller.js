@@ -65,7 +65,8 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
       else if (index === 9) column.width = 12; // Volume
       else if (index === 10) column.width = 12; // Alcohol Co
       else if (index === 11) column.width = 20; // Origin
-      else if (index === 12) column.width = 18; // Created Date
+      else if (index === 12) column.width = 50; // Image
+      else if (index === 13) column.width = 18; // Created Date
       else column.width = 15;
     });
 
@@ -94,7 +95,7 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
       "2. Required fields: Name, Category, Price, Stock",
     ]);
     instructionsSheet.addRow([
-      "3. Optional fields: Rating, Sales, Volume, Alcohol Co, Origin, Is New",
+      "3. Optional fields: Rating, Sales, Volume, Alcohol Co, Origin, Image, Is New",
     ]);
     instructionsSheet.addRow([
       "4. Price can include 'Rs.' prefix (e.g., 'Rs. 1000.00') or just numbers",
@@ -118,10 +119,13 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
       "10. Is New: Use 'Yes', 'true', or '1' for recommended products, 'No', 'false', or '0' otherwise",
     ]);
     instructionsSheet.addRow([
-      "11. Status, In Stock, and Created Date columns are auto-calculated and will be ignored during import",
+      "11. Image: Enter the full URL of the product image (e.g., https://example.com/image.jpg). Leave empty if no image.",
     ]);
     instructionsSheet.addRow([
-      "12. If a product with the same name exists, it will be updated (matched by name, case-insensitive)",
+      "12. Status, In Stock, and Created Date columns are auto-calculated and will be ignored during import",
+    ]);
+    instructionsSheet.addRow([
+      "13. If a product with the same name exists, it will be updated (matched by name, case-insensitive)",
     ]);
 
     res.setHeader(
@@ -202,9 +206,25 @@ export const importProductsFromExcel = [
         const row = worksheet.getRow(i);
         const values = [];
         row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
-          values.push(`Col${colNumber}: ${cell.value}`);
+          const header = worksheet.getRow(1).getCell(colNumber).value;
+          values.push(`${header || `Col${colNumber}`}: ${cell.value}`);
         });
         console.log(`  Row ${i}:`, values.join(", "));
+      }
+
+      // Check if Image column exists in header
+      const headerRow = worksheet.getRow(1);
+      let imageColumnFound = false;
+      headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+        const headerValue = cell.value?.toString().toLowerCase() || "";
+        if (headerValue.includes("image")) {
+          imageColumnFound = true;
+          console.log(`🖼️  Image column found at column ${colNumber}: "${cell.value}"`);
+        }
+      });
+      
+      if (!imageColumnFound) {
+        console.warn("⚠️  Image column not found in header row. Image URLs will be empty.");
       }
 
       const result = await importProductsFromFile(worksheet);
