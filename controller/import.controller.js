@@ -30,6 +30,12 @@ const upload = multer({
 export const downloadProductTemplate = asyncHandler(async (req, res) => {
   try {
     const templateData = generateProductTemplate();
+    
+    // Verify Image column is in headers
+    console.log("📋 Template headers:", templateData.headers);
+    const imageIndex = templateData.headers.findIndex(h => h.toLowerCase().includes("image"));
+    console.log(`🖼️  Image column found at index: ${imageIndex}`);
+    
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Products");
 
@@ -43,6 +49,14 @@ export const downloadProductTemplate = asyncHandler(async (req, res) => {
 
     // Style the header row
     const headerRow = worksheet.getRow(1);
+    
+    // Verify Image column was added
+    console.log(`✅ Header row has ${headerRow.cellCount} cells`);
+    headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+      if (cell.value?.toString().toLowerCase().includes("image")) {
+        console.log(`🖼️  Image column confirmed at column ${colNumber}: "${cell.value}"`);
+      }
+    });
     headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
     headerRow.fill = {
       type: "pattern",

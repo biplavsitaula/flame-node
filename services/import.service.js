@@ -49,7 +49,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -65,7 +65,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -81,7 +81,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -97,7 +97,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -113,7 +113,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -129,7 +129,7 @@ export const generateProductTemplate = () => {
         "750ml",
         43,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -145,7 +145,7 @@ export const generateProductTemplate = () => {
         "750ml",
         12.5,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -161,7 +161,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -177,7 +177,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400&h=400&fit=crop&q=80",
         "",
       ],
       [
@@ -193,7 +193,7 @@ export const generateProductTemplate = () => {
         "750ml",
         40,
         "",
-        "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+        "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400&h=400&fit=crop&q=80",
         "",
       ],
     ],
@@ -355,6 +355,9 @@ export const importProductsFromFile = async (worksheet) => {
       if (existingProduct) {
         // Update existing product
         console.log(`🔄 Updating product: ${existingProduct.name} -> ${productData.name}`);
+        if (productData.imageUrl) {
+          console.log(`🖼️  Image URL from Excel: "${productData.imageUrl}"`);
+        }
         
         // Calculate discount and final price
         const discountPercent = productData.discountPercent !== undefined ? productData.discountPercent : existingProduct.discountPercent || 0;
@@ -392,8 +395,10 @@ export const importProductsFromFile = async (worksheet) => {
         if (productData.volume !== undefined && productData.volume !== null) {
           updateData.volume = productData.volume;
         }
-        if (productData.imageUrl !== undefined && productData.imageUrl !== null) {
-          updateData.imageUrl = productData.imageUrl;
+        // Always update imageUrl if provided (including empty string to clear image)
+        if (productData.imageUrl !== undefined) {
+          updateData.imageUrl = productData.imageUrl || ""; // Allow empty string to clear image
+          console.log(`🖼️  Updating imageUrl for ${productData.name}: "${updateData.imageUrl}"`);
         }
         if (productData.tag !== undefined && productData.tag !== null) {
           updateData.tag = productData.tag;
@@ -468,8 +473,10 @@ export const importProductsFromFile = async (worksheet) => {
           if (productData.volume !== undefined && productData.volume !== null) {
             updateData.volume = productData.volume;
           }
-          if (productData.imageUrl !== undefined && productData.imageUrl !== null) {
-            updateData.imageUrl = productData.imageUrl;
+          // Always update imageUrl if provided (including empty string to clear image)
+          if (productData.imageUrl !== undefined) {
+            updateData.imageUrl = productData.imageUrl || ""; // Allow empty string to clear image
+            console.log(`🖼️  Updating imageUrl for ${productData.name}: "${updateData.imageUrl}"`);
           }
           if (productData.tag !== undefined && productData.tag !== null) {
             updateData.tag = productData.tag;
