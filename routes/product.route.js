@@ -20,8 +20,7 @@ const router = express.Router();
 // Public routes - Products
 router.get("/products", fetchAllProducts);
 
-// Public routes - Brands (GET) - Must be before /products/:id to avoid route conflicts
-router.get("/products/brands", fetchAllBrandsFromController);
+// Public routes - Brands (GET) - Must be before /products/:id to avoid route conflictsrouter.get("/products/brands", fetchAllBrandsFromController);
 router.get("/products/brands/:id", fetchBrandById);
 
 // Public routes - Products (by ID) - Must be after /products/brands
