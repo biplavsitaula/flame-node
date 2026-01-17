@@ -86,6 +86,19 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+      set: (v) => {
+        // Ensure imageUrl is always a string, never an object
+        if (!v || v === null || v === undefined) return "";
+        if (typeof v === "string") return v.trim();
+        if (typeof v === "object") {
+          // Handle hyperlink objects or other complex types
+          const str = v.hyperlink || v.text || v.address || "";
+          return String(str).trim();
+        }
+        const str = String(v);
+        // If it's [object Object], return empty string
+        return str === "[object Object]" ? "" : str.trim();
+      },
     },
     tag: {
       type: String,

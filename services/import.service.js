@@ -397,7 +397,20 @@ export const importProductsFromFile = async (worksheet) => {
         }
         // Always update imageUrl if provided (including empty string to clear image)
         if (productData.imageUrl !== undefined) {
-          updateData.imageUrl = productData.imageUrl || ""; // Allow empty string to clear image
+          // Ensure imageUrl is always a string, never an object
+          let imageUrlValue = productData.imageUrl || "";
+          if (typeof imageUrlValue !== "string") {
+            if (typeof imageUrlValue === "object" && imageUrlValue !== null) {
+              imageUrlValue = imageUrlValue.hyperlink || imageUrlValue.text || imageUrlValue.address || "";
+            } else {
+              imageUrlValue = String(imageUrlValue);
+            }
+            // If it's still [object Object], set to empty string
+            if (imageUrlValue === "[object Object]") {
+              imageUrlValue = "";
+            }
+          }
+          updateData.imageUrl = imageUrlValue.trim();
           console.log(`🖼️  Updating imageUrl for ${productData.name}: "${updateData.imageUrl}"`);
         }
         if (productData.tag !== undefined && productData.tag !== null) {
@@ -475,7 +488,20 @@ export const importProductsFromFile = async (worksheet) => {
           }
           // Always update imageUrl if provided (including empty string to clear image)
           if (productData.imageUrl !== undefined) {
-            updateData.imageUrl = productData.imageUrl || ""; // Allow empty string to clear image
+            // Ensure imageUrl is always a string, never an object
+            let imageUrlValue = productData.imageUrl || "";
+            if (typeof imageUrlValue !== "string") {
+              if (typeof imageUrlValue === "object" && imageUrlValue !== null) {
+                imageUrlValue = imageUrlValue.hyperlink || imageUrlValue.text || imageUrlValue.address || "";
+              } else {
+                imageUrlValue = String(imageUrlValue);
+              }
+              // If it's still [object Object], set to empty string
+              if (imageUrlValue === "[object Object]") {
+                imageUrlValue = "";
+              }
+            }
+            updateData.imageUrl = imageUrlValue.trim();
             console.log(`🖼️  Updating imageUrl for ${productData.name}: "${updateData.imageUrl}"`);
           }
           if (productData.tag !== undefined && productData.tag !== null) {
@@ -507,7 +533,22 @@ export const importProductsFromFile = async (worksheet) => {
             totalSold: productData.totalSold || 0,
             alcoholPercentage: productData.alcoholPercentage || undefined,
             volume: productData.volume || "",
-            imageUrl: productData.imageUrl || "",
+            imageUrl: (() => {
+              let imgUrl = productData.imageUrl || "";
+              // Ensure imageUrl is always a string, never an object
+              if (typeof imgUrl !== "string") {
+                if (typeof imgUrl === "object" && imgUrl !== null) {
+                  imgUrl = imgUrl.hyperlink || imgUrl.text || imgUrl.address || "";
+                } else {
+                  imgUrl = String(imgUrl);
+                }
+                // If it's still [object Object], set to empty string
+                if (imgUrl === "[object Object]") {
+                  imgUrl = "";
+                }
+              }
+              return imgUrl.trim();
+            })(),
             tag: productData.tag || "",
             isRecommended: productData.isRecommended || false,
           });
@@ -603,13 +644,52 @@ const parseProductRow = (row, rowNumber, columnOffsets) => {
   const getCellValue = (index) => {
     try {
       const cell = row.getCell(index);
-      if (!cell || cell.value === null || cell.value === undefined || cell.value === "") {
+      if (!cell) {
         return null;
       }
+      
+      // Handle hyperlinks first - ExcelJS stores hyperlinks in cell.hyperlink
+      // For hyperlink cells, we want the actual URL, not the display text
+      if (cell.hyperlink) {
+        // cell.hyperlink can be a string (URL) or an object with properties
+        if (typeof cell.hyperlink === "string") {
+          return cell.hyperlink;
+        } else if (typeof cell.hyperlink === "object" && cell.hyperlink !== null) {
+          // Hyperlink object might have 'address' or 'target' property
+          return cell.hyperlink.address || cell.hyperlink.target || cell.hyperlink.text || null;
+        }
+      }
+      
+      // Check if cell has a value
+      if (cell.value === null || cell.value === undefined || cell.value === "") {
+        return null;
+      }
+      
+      // Handle rich text (which might contain hyperlinks)
+      if (cell.value && typeof cell.value === "object" && cell.value.richText) {
+        // Extract text from rich text
+        const text = cell.value.richText.map(rt => rt.text || "").join("");
+        return text || null;
+      }
+      
       // Handle formula cells
       if (cell.type === "formula") {
         return cell.result || null;
       }
+      
+      // Handle objects that might be stringified incorrectly
+      if (typeof cell.value === "object" && cell.value !== null) {
+        // If it's an object, try to extract meaningful value
+        if (cell.value.text) return cell.value.text;
+        if (cell.value.toString && typeof cell.value.toString === "function") {
+          const str = cell.value.toString();
+          // Only use toString if it doesn't return [object Object]
+          if (str !== "[object Object]") return str;
+        }
+        // Last resort: return null for complex objects
+        return null;
+      }
+      
       return cell.value;
     } catch (error) {
       console.warn(`⚠️  Error reading cell ${index} in row ${rowNumber}:`, error.message);
@@ -694,7 +774,26 @@ const parseProductRow = (row, rowNumber, columnOffsets) => {
 
   // Get image URL from Image column
   const rawImageUrl = getCellValue(columnOffsets.imageOffset);
-  const imageUrl = rawImageUrl ? rawImageUrl.toString().trim() : "";
+  // Ensure imageUrl is always a string, never an object
+  let imageUrl = "";
+  if (rawImageUrl) {
+    if (typeof rawImageUrl === "string") {
+      imageUrl = rawImageUrl.trim();
+    } else if (typeof rawImageUrl === "object" && rawImageUrl !== null) {
+      // Handle hyperlink objects or other complex types
+      if (rawImageUrl.hyperlink) {
+        imageUrl = String(rawImageUrl.hyperlink).trim();
+      } else if (rawImageUrl.text) {
+        imageUrl = String(rawImageUrl.text).trim();
+      } else {
+        // Last resort: try toString, but check if it's not [object Object]
+        const str = String(rawImageUrl);
+        imageUrl = str !== "[object Object]" ? str.trim() : "";
+      }
+    } else {
+      imageUrl = String(rawImageUrl).trim();
+    }
+  }
 
   // Debug logging for image column
   if (rowNumber <= 5) {
