@@ -520,9 +520,25 @@ export const acceptOrder = async (orderId) => {
     priority: "medium",
   });
 
-  return await Order.findById(orderId)
+  // Send email notification to customer if email is provided
+  const updatedOrder = await Order.findById(orderId)
     .populate("items.productId", "name imageUrl category stock")
     .lean();
+
+  if (updatedOrder.customer?.email) {
+    try {
+      const { sendOrderAcceptanceEmail } = await import("../services/email.service.js");
+      await sendOrderAcceptanceEmail(updatedOrder, updatedOrder.customer.email);
+      console.log(`✅ Order acceptance email sent to ${updatedOrder.customer.email} for order ${order.billNumber}`);
+    } catch (emailError) {
+      console.error(`❌ Failed to send order acceptance email:`, emailError.message);
+      // Don't throw error - order is already accepted, email failure shouldn't block the process
+    }
+  } else {
+    console.log(`⚠️  No email address found for order ${order.billNumber}. Skipping email notification.`);
+  }
+
+  return updatedOrder;
 };
 
 /**
@@ -558,9 +574,25 @@ export const rejectOrder = async (orderId, rejectionReason = "") => {
     priority: "medium",
   });
 
-  return await Order.findById(orderId)
+  // Send email notification to customer if email is provided
+  const updatedOrder = await Order.findById(orderId)
     .populate("items.productId", "name imageUrl category stock")
     .lean();
+
+  if (updatedOrder.customer?.email) {
+    try {
+      const { sendOrderRejectionEmail } = await import("../services/email.service.js");
+      await sendOrderRejectionEmail(updatedOrder, updatedOrder.customer.email);
+      console.log(`✅ Order rejection email sent to ${updatedOrder.customer.email} for order ${order.billNumber}`);
+    } catch (emailError) {
+      console.error(`❌ Failed to send order rejection email:`, emailError.message);
+      // Don't throw error - order is already rejected, email failure shouldn't block the process
+    }
+  } else {
+    console.log(`⚠️  No email address found for order ${order.billNumber}. Skipping email notification.`);
+  }
+
+  return updatedOrder;
 };
 
 export const deleteOrder = async (id) => {

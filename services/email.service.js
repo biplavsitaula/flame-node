@@ -498,9 +498,211 @@ export const sendWelcomeEmail = async (user) => {
   });
 };
 
+/**
+ * Send order acceptance email to customer
+ */
+export const sendOrderAcceptanceEmail = async (order, customerEmail) => {
+  const itemsList = order.items
+    .map(
+      (item) =>
+        `<tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">Rs. ${item.price.toLocaleString()}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">Rs. ${item.total.toLocaleString()}</td>
+        </tr>`
+    )
+    .join("");
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">✅ Order Accepted</h1>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333;">Great News! Your Order Has Been Accepted</h2>
+        <p style="color: #666;">Your order is now being processed and will be prepared for delivery.</p>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+          <p><strong>Bill Number:</strong> ${order.billNumber}</p>
+          <p><strong>Customer:</strong> ${order.customer.fullName}</p>
+          <p><strong>Phone:</strong> ${order.customer.mobile}</p>
+          <p><strong>Delivery Address:</strong> ${order.customer.location}</p>
+          <p><strong>Payment Method:</strong> ${order.paymentMethod}</p>
+          <p><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">Accepted</span></p>
+          ${order.acceptedAt ? `<p><strong>Accepted At:</strong> ${new Date(order.acceptedAt).toLocaleString()}</p>` : ""}
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px;">
+          <thead>
+            <tr style="background: #28a745; color: white;">
+              <th style="padding: 12px; text-align: left;">Product</th>
+              <th style="padding: 12px; text-align: center;">Qty</th>
+              <th style="padding: 12px; text-align: right;">Price</th>
+              <th style="padding: 12px; text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsList}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="padding: 10px; text-align: right;"><strong>Subtotal:</strong></td>
+              <td style="padding: 10px; text-align: right;">Rs. ${(order.subtotal || order.totalAmount).toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td colspan="3" style="padding: 10px; text-align: right;"><strong>Delivery Fee:</strong></td>
+              <td style="padding: 10px; text-align: right;">Rs. ${(order.deliveryFee || 0).toLocaleString()}</td>
+            </tr>
+            <tr style="background: #f0f0f0;">
+              <td colspan="3" style="padding: 12px; text-align: right;"><strong>Total Amount:</strong></td>
+              <td style="padding: 12px; text-align: right; font-size: 18px; color: #28a745;"><strong>Rs. ${order.totalAmount.toLocaleString()}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div style="margin-top: 30px; padding: 20px; background: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+          <p style="margin: 0; color: #155724;">
+            <strong>📦 Order Status:</strong> Your order has been accepted and is being prepared for delivery.
+          </p>
+          <p style="margin: 10px 0 0 0; color: #155724;">
+            We will notify you once your order is ready for delivery.
+          </p>
+        </div>
+      </div>
+
+      <div style="background: #333; color: white; padding: 20px; text-align: center;">
+        <p style="margin: 0;">Thank you for choosing Flame Beverage!</p>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">Questions? Contact us at ${process.env.EMAIL_USER || "support@flamebeverage.com"}</p>
+      </div>
+    </div>
+  `;
+
+  return await sendEmail({
+    to: customerEmail,
+    subject: `Order Accepted - ${order.billNumber}`,
+    text: `Your order ${order.billNumber} has been accepted and is being processed. Total: Rs. ${order.totalAmount.toLocaleString()}`,
+    html,
+  });
+};
+
+/**
+ * Send order rejection email to customer
+ */
+export const sendOrderRejectionEmail = async (order, customerEmail) => {
+  const itemsList = order.items
+    .map(
+      (item) =>
+        `<tr>
+          <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">Rs. ${item.price.toLocaleString()}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">Rs. ${item.total.toLocaleString()}</td>
+        </tr>`
+    )
+    .join("");
+
+  const rejectionReason = order.rejectionReason || "Order rejected by admin";
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); padding: 20px; text-align: center;">
+        <h1 style="color: white; margin: 0;">❌ Order Rejected</h1>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333;">Order Status Update</h2>
+        <p style="color: #666;">We regret to inform you that your order has been rejected.</p>
+        
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+          <p><strong>Bill Number:</strong> ${order.billNumber}</p>
+          <p><strong>Customer:</strong> ${order.customer.fullName}</p>
+          <p><strong>Phone:</strong> ${order.customer.mobile}</p>
+          <p><strong>Delivery Address:</strong> ${order.customer.location}</p>
+          <p><strong>Payment Method:</strong> ${order.paymentMethod}</p>
+          <p><strong>Status:</strong> <span style="color: #dc3545; font-weight: bold;">Rejected</span></p>
+          ${order.rejectedAt ? `<p><strong>Rejected At:</strong> ${new Date(order.rejectedAt).toLocaleString()}</p>` : ""}
+        </div>
+
+        <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+          <p style="margin: 0; color: #721c24;">
+            <strong>Rejection Reason:</strong>
+          </p>
+          <p style="margin: 10px 0 0 0; color: #721c24;">
+            ${rejectionReason}
+          </p>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px;">
+          <thead>
+            <tr style="background: #dc3545; color: white;">
+              <th style="padding: 12px; text-align: left;">Product</th>
+              <th style="padding: 12px; text-align: center;">Qty</th>
+              <th style="padding: 12px; text-align: right;">Price</th>
+              <th style="padding: 12px; text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsList}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="padding: 10px; text-align: right;"><strong>Subtotal:</strong></td>
+              <td style="padding: 10px; text-align: right;">Rs. ${(order.subtotal || order.totalAmount).toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td colspan="3" style="padding: 10px; text-align: right;"><strong>Delivery Fee:</strong></td>
+              <td style="padding: 10px; text-align: right;">Rs. ${(order.deliveryFee || 0).toLocaleString()}</td>
+            </tr>
+            <tr style="background: #f0f0f0;">
+              <td colspan="3" style="padding: 12px; text-align: right;"><strong>Total Amount:</strong></td>
+              <td style="padding: 12px; text-align: right; font-size: 18px; color: #dc3545;"><strong>Rs. ${order.totalAmount.toLocaleString()}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-radius: 8px;">
+          <p style="margin: 0; color: #856404;">
+            <strong>💳 Payment Information:</strong>
+          </p>
+          <p style="margin: 10px 0 0 0; color: #856404;">
+            ${order.paymentMethod === "Online" 
+              ? "If you have already made a payment, a refund will be processed within 5-7 business days." 
+              : "No payment was required for this order."}
+          </p>
+        </div>
+
+        <div style="margin-top: 20px; padding: 20px; background: #d1ecf1; border-radius: 8px;">
+          <p style="margin: 0; color: #0c5460;">
+            <strong>Need Help?</strong>
+          </p>
+          <p style="margin: 10px 0 0 0; color: #0c5460;">
+            If you have any questions or concerns about this rejection, please contact our support team.
+          </p>
+        </div>
+      </div>
+
+      <div style="background: #333; color: white; padding: 20px; text-align: center;">
+        <p style="margin: 0;">We apologize for any inconvenience.</p>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">Contact us at ${process.env.EMAIL_USER || "support@flamebeverage.com"}</p>
+      </div>
+    </div>
+  `;
+
+  return await sendEmail({
+    to: customerEmail,
+    subject: `Order Rejected - ${order.billNumber}`,
+    text: `Your order ${order.billNumber} has been rejected. Reason: ${rejectionReason}`,
+    html,
+  });
+};
+
 export default {
   sendEmail,
   sendOrderConfirmationEmail,
+  sendOrderAcceptanceEmail,
+  sendOrderRejectionEmail,
   sendLowStockAlertEmail,
   sendPaymentConfirmationEmail,
   sendWelcomeEmail,
