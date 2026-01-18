@@ -510,15 +510,26 @@ export const acceptOrder = async (orderId) => {
     }
   }
 
-  // Create notification
-  await Notification.create({
+  // Create notification (check for duplicates first - within last 5 seconds to prevent race conditions)
+  const fiveSecondsAgo = new Date(Date.now() - 5000);
+  const existingNotification = await Notification.findOne({
+    relatedId: order._id,
     type: "New Order",
     title: "Order Accepted",
-    message: `Order ${order.billNumber} has been accepted and stock updated.`,
-    relatedId: order._id,
     relatedModel: "Order",
-    priority: "medium",
+    createdAt: { $gte: fiveSecondsAgo },
   });
+
+  if (!existingNotification) {
+    await Notification.create({
+      type: "New Order",
+      title: "Order Accepted",
+      message: `Order ${order.billNumber} has been accepted and stock updated.`,
+      relatedId: order._id,
+      relatedModel: "Order",
+      priority: "medium",
+    });
+  }
 
   // Send email notification to customer if email is provided
   const updatedOrder = await Order.findById(orderId)
@@ -564,15 +575,26 @@ export const rejectOrder = async (orderId, rejectionReason = "") => {
   // If payment was made online, refund should be processed (not implemented here)
   // For COD orders, no refund needed
 
-  // Create notification
-  await Notification.create({
+  // Create notification (check for duplicates first - within last 5 seconds to prevent race conditions)
+  const fiveSecondsAgo = new Date(Date.now() - 5000);
+  const existingNotification = await Notification.findOne({
+    relatedId: order._id,
     type: "New Order",
     title: "Order Rejected",
-    message: `Order ${order.billNumber} has been rejected.${rejectionReason ? ` Reason: ${rejectionReason}` : ""}`,
-    relatedId: order._id,
     relatedModel: "Order",
-    priority: "medium",
+    createdAt: { $gte: fiveSecondsAgo },
   });
+
+  if (!existingNotification) {
+    await Notification.create({
+      type: "New Order",
+      title: "Order Rejected",
+      message: `Order ${order.billNumber} has been rejected.${rejectionReason ? ` Reason: ${rejectionReason}` : ""}`,
+      relatedId: order._id,
+      relatedModel: "Order",
+      priority: "medium",
+    });
+  }
 
   // Send email notification to customer if email is provided
   const updatedOrder = await Order.findById(orderId)
