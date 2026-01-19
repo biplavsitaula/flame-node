@@ -41,13 +41,32 @@ router.post("/email/test", async (req, res) => {
       res.status(200).json({
         success: true,
         message: `Test email sent successfully to ${to}`,
-        data: { messageId: result.messageId },
+        data: { 
+          messageId: result.messageId,
+          response: result.response,
+          note: "Check your inbox and spam folder. Email may take a few moments to arrive.",
+        },
       });
     } else {
-      res.status(500).json({
+      // Provide detailed error information
+      const errorResponse = {
         success: false,
         message: `Failed to send email: ${result.error}`,
-      });
+        error: result.error,
+        rateLimited: result.rateLimited || false,
+      };
+      
+      // Include troubleshooting steps if available
+      if (result.troubleshooting) {
+        errorResponse.troubleshooting = result.troubleshooting;
+      }
+      
+      // Include error code if available
+      if (result.errorCode) {
+        errorResponse.errorCode = result.errorCode;
+      }
+      
+      res.status(500).json(errorResponse);
     }
   } catch (error) {
     res.status(500).json({
@@ -64,23 +83,43 @@ router.get("/email/diagnostic", async (req, res) => {
     const emailPass = process.env.EMAIL_PASS ? "***" + process.env.EMAIL_PASS.slice(-4) : "Not set";
     const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com (Gmail service)";
     const emailPort = process.env.EMAIL_PORT || "587 (default)";
+    const nodeEnv = process.env.NODE_ENV || "development";
+    const rateLimitDisabled = process.env.DISABLE_EMAIL_RATE_LIMIT === "true";
 
-    // Try to verify connection
+    // Try to verify connection using the same method as the service
     const nodemailer = await import("nodemailer");
+    
+    // Create transporter exactly like in the service
     const transporter = nodemailer.default.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER || "hasinadhungel15@gmail.com",
+        user: emailUser,
         pass: process.env.EMAIL_PASS || "igjb befr pjim wcpg",
+      },
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
+      debug: nodeEnv === "development",
+      logger: nodeEnv === "development",
+      secure: false,
+      requireTLS: true,
+      tls: {
+        rejectUnauthorized: false,
       },
     });
 
     let connectionStatus = "Unknown";
+    let connectionError = null;
     try {
       await transporter.verify();
       connectionStatus = "✅ Connected successfully";
     } catch (error) {
       connectionStatus = `❌ Connection failed: ${error.message}`;
+      connectionError = {
+        code: error.code,
+        message: error.message,
+        command: error.command,
+      };
     }
 
     res.status(200).json({
@@ -90,16 +129,27 @@ router.get("/email/diagnostic", async (req, res) => {
         emailPass: emailPass,
         emailHost,
         emailPort,
+        nodeEnv,
+        rateLimitDisabled,
         connectionStatus,
+        connectionError,
       },
       instructions: {
         gmail: "For Gmail, you need to use an App Password (not your regular password).",
         steps: [
-          "1. Go to your Google Account settings",
-          "2. Enable 2-Step Verification",
-          "3. Go to App Passwords",
-          "4. Generate a new App Password for 'Mail'",
-          "5. Use that 16-character password (with spaces) in EMAIL_PASS",
+          "1. Go to: https://myaccount.google.com/security",
+          "2. Enable 2-Step Verification (required for App Passwords)",
+          "3. Go to: https://myaccount.google.com/apppasswords",
+          "4. Select 'Mail' and device type",
+          "5. Generate and copy the 16-character App Password (with spaces)",
+          "6. Add to .env: EMAIL_PASS='your app password here'",
+          "7. Restart your server",
+        ],
+        testing: [
+          "1. Use POST /api/email/test with body: { \"to\": \"your-email@gmail.com\" }",
+          "2. Check console logs for detailed error messages",
+          "3. Check spam folder if email doesn't arrive",
+          "4. In development, set DISABLE_EMAIL_RATE_LIMIT=true in .env to bypass rate limiting",
         ],
       },
     });
@@ -107,6 +157,7 @@ router.get("/email/diagnostic", async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 });

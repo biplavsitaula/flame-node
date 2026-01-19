@@ -36,12 +36,18 @@ const createTransporter = () => {
       pass: emailPass, // Use App Password, not regular password
     },
     // Add timeout and connection options
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
+    connectionTimeout: 30000, // 30 seconds (increased for better reliability)
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
     // Debug mode for troubleshooting
     debug: process.env.NODE_ENV === "development",
     logger: process.env.NODE_ENV === "development",
+    // Additional options for better Gmail compatibility
+    secure: false, // Use TLS
+    requireTLS: true,
+    tls: {
+      rejectUnauthorized: false, // Allow self-signed certificates in development
+    },
   });
 };
 
@@ -50,8 +56,14 @@ const emailRateLimit = new Map();
 
 /**
  * Check if email can be sent (rate limiting)
+ * In development, reduce rate limiting to 5 seconds for easier testing
  */
-const canSendEmail = (to, minIntervalMs = 60000) => { // 1 minute cooldown
+const canSendEmail = (to, minIntervalMs = process.env.NODE_ENV === "development" ? 5000 : 60000) => {
+  // Skip rate limiting in development for easier testing
+  if (process.env.NODE_ENV === "development" && process.env.DISABLE_EMAIL_RATE_LIMIT === "true") {
+    return true;
+  }
+  
   const lastSent = emailRateLimit.get(to);
   if (!lastSent) {
     return true;
@@ -65,11 +77,20 @@ const canSendEmail = (to, minIntervalMs = 60000) => { // 1 minute cooldown
  */
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
+    console.log("\n" + "=".repeat(80));
+    console.log("📧 EMAIL SEND REQUEST");
+    console.log("=".repeat(80));
+    console.log("To:", to);
+    console.log("Subject:", subject);
+    console.log("Environment:", process.env.NODE_ENV || "development");
+    
     // Rate limiting check
     if (!canSendEmail(to)) {
       const lastSent = emailRateLimit.get(to);
-      const waitTime = Math.ceil((60000 - (Date.now() - lastSent)) / 1000);
+      const minInterval = process.env.NODE_ENV === "development" ? 5000 : 60000;
+      const waitTime = Math.ceil((minInterval - (Date.now() - lastSent)) / 1000);
       console.warn(`⏳ Rate limit: Please wait ${waitTime} seconds before sending another email to ${to}`);
+      console.log("=".repeat(80) + "\n");
       return { 
         success: false, 
         error: `Please wait ${waitTime} seconds before requesting another email. This prevents spam.`,
@@ -79,16 +100,47 @@ export const sendEmail = async ({ to, subject, text, html }) => {
 
     const transporter = createTransporter();
 
-    // Verify connection
+    // Verify connection with detailed error reporting
     console.log("🔍 Verifying email connection...");
     try {
       await transporter.verify();
-      console.log("✅ Email server connection verified");
+      console.log("✅ Email server connection verified successfully!");
     } catch (verifyError) {
-      console.error("❌ Email server verification failed:", verifyError.message);
+      console.error("❌ Email server verification failed!");
+      console.error("Error code:", verifyError.code);
+      console.error("Error message:", verifyError.message);
+      console.error("Full error:", verifyError);
+      
+      // Provide specific guidance based on error
+      let errorMessage = `Email server verification failed: ${verifyError.message}`;
+      let troubleshooting = [];
+      
+      if (verifyError.code === 'EAUTH') {
+        errorMessage = "Authentication failed. Please check your email credentials.";
+        troubleshooting = [
+          "1. Verify EMAIL_USER and EMAIL_PASS in your .env file",
+          "2. For Gmail, you MUST use an App Password (not your regular password)",
+          "3. Make sure 2-Step Verification is enabled on your Google Account",
+          "4. Generate a new App Password: https://myaccount.google.com/apppasswords",
+          "5. Use the 16-character App Password (with spaces) in EMAIL_PASS",
+        ];
+      } else if (verifyError.code === 'ECONNECTION' || verifyError.code === 'ETIMEDOUT') {
+        errorMessage = "Connection to email server failed.";
+        troubleshooting = [
+          "1. Check your internet connection",
+          "2. Verify EMAIL_HOST and EMAIL_PORT in .env (if using custom SMTP)",
+          "3. Check if your firewall is blocking the connection",
+        ];
+      }
+      
+      console.error("\n🔧 Troubleshooting Steps:");
+      troubleshooting.forEach(step => console.error("   " + step));
+      console.log("=".repeat(80) + "\n");
+      
       return {
         success: false,
-        error: `Email server verification failed: ${verifyError.message}. Please check your email configuration.`,
+        error: errorMessage,
+        troubleshooting: troubleshooting.length > 0 ? troubleshooting : undefined,
       };
     }
 
@@ -113,51 +165,89 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     console.log("✅ Email sent successfully!");
     console.log("   Message ID:", info.messageId);
     console.log("   Response:", info.response);
+    console.log("   Accepted:", info.accepted);
+    console.log("   Rejected:", info.rejected);
     console.log("   📬 Email should arrive shortly. Check inbox and spam folder.");
+    console.log("=".repeat(80) + "\n");
     
     // Update rate limit
     emailRateLimit.set(to, Date.now());
     
     return { success: true, messageId: info.messageId, response: info.response };
   } catch (error) {
-    console.error("❌ Email send error:", error.message);
+    console.error("\n" + "=".repeat(80));
+    console.error("❌ EMAIL SEND ERROR");
+    console.error("=".repeat(80));
+    console.error("Error message:", error.message);
     console.error("Error code:", error.code);
     console.error("Error response:", error.response);
-    console.error("Full error:", error);
+    console.error("Error responseCode:", error.responseCode);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Full error stack:", error.stack);
+    }
+    console.error("=".repeat(80));
     
-    // Check for specific Gmail errors
+    // Check for specific Gmail errors and provide detailed guidance
     if (error.code === 'EAUTH') {
-      console.error("❌ Authentication failed. Check:");
-      console.error("   - Email credentials in .env file");
-      console.error("   - If using Gmail, ensure you're using an App Password (not regular password)");
-      console.error("   - Enable 'Less secure app access' or use OAuth2");
+      console.error("\n🔧 GMAIL AUTHENTICATION ERROR - Troubleshooting:");
+      console.error("   1. Verify EMAIL_USER and EMAIL_PASS in your .env file");
+      console.error("   2. For Gmail, you MUST use an App Password (NOT your regular password)");
+      console.error("   3. Steps to create Gmail App Password:");
+      console.error("      a. Go to: https://myaccount.google.com/security");
+      console.error("      b. Enable 2-Step Verification (required)");
+      console.error("      c. Go to: https://myaccount.google.com/apppasswords");
+      console.error("      d. Select 'Mail' and 'Other (Custom name)'");
+      console.error("      e. Enter 'Flame Beverage API' as the name");
+      console.error("      f. Copy the 16-character password (with spaces)");
+      console.error("      g. Use it in EMAIL_PASS in your .env file");
+      console.error("   4. Make sure there are no extra spaces in EMAIL_PASS");
+      console.error("   5. Restart your server after updating .env");
+      console.error("=".repeat(80) + "\n");
       return { 
         success: false, 
-        error: "Email authentication failed. Please check email credentials. For Gmail, use an App Password." 
+        error: "Email authentication failed. Please check email credentials. For Gmail, use an App Password (not regular password).",
+        troubleshooting: [
+          "Verify EMAIL_USER and EMAIL_PASS in .env",
+          "For Gmail, use App Password: https://myaccount.google.com/apppasswords",
+          "Enable 2-Step Verification first",
+          "Restart server after updating .env",
+        ],
       };
     }
     if (error.code === 'EENVELOPE') {
+      console.error("\n🔧 Invalid email address provided");
+      console.error("=".repeat(80) + "\n");
       return { 
         success: false, 
-        error: "Invalid email address." 
+        error: `Invalid email address: ${to}`,
       };
     }
     if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+      console.error("\n🔧 Connection error - Troubleshooting:");
+      console.error("   1. Check your internet connection");
+      console.error("   2. Verify EMAIL_HOST and EMAIL_PORT (if using custom SMTP)");
+      console.error("   3. Check firewall settings");
+      console.error("   4. Try again in a few moments");
+      console.error("=".repeat(80) + "\n");
       return {
         success: false,
         error: "Connection to email server failed. Please check your internet connection and email server settings.",
       };
     }
     if (error.responseCode === 550 || error.responseCode === 553) {
+      console.error("\n🔧 Email rejected by server");
+      console.error("=".repeat(80) + "\n");
       return { 
         success: false, 
-        error: "Email rejected by server. Please check the recipient email address." 
+        error: `Email rejected by server. Please check the recipient email address: ${to}`,
       };
     }
     
+    console.error("=".repeat(80) + "\n");
     return { 
       success: false, 
       error: error.message || "Failed to send email",
+      errorCode: error.code,
       details: process.env.NODE_ENV === "development" ? error.stack : undefined,
     };
   }
