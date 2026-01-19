@@ -1,5 +1,5 @@
 import express from "express";
-import { sendEmail } from "../services/email.service.js";
+import { sendEmail, clearEmailRateLimit } from "../services/email.service.js";
 
 const router = express.Router();
 
@@ -79,12 +79,38 @@ router.post("/email/test", async (req, res) => {
 // Email configuration diagnostic endpoint
 router.get("/email/diagnostic", async (req, res) => {
   try {
-    const emailUser = process.env.EMAIL_USER || "hasinadhungel15@gmail.com";
-    const emailPass = process.env.EMAIL_PASS ? "***" + process.env.EMAIL_PASS.slice(-4) : "Not set";
+    const emailUser = process.env.EMAIL_USER?.trim();
+    const emailPass = process.env.EMAIL_PASS ? "***" + process.env.EMAIL_PASS.slice(-4) : "❌ NOT SET";
     const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com (Gmail service)";
     const emailPort = process.env.EMAIL_PORT || "587 (default)";
     const nodeEnv = process.env.NODE_ENV || "development";
     const rateLimitDisabled = process.env.DISABLE_EMAIL_RATE_LIMIT === "true";
+
+    // Check if credentials are set
+    if (!emailUser || !process.env.EMAIL_PASS) {
+      return res.status(400).json({
+        success: false,
+        error: "EMAIL_USER and EMAIL_PASS must be set in .env file",
+        configuration: {
+          emailUser: emailUser || "❌ NOT SET",
+          emailPass: emailPass,
+          emailHost,
+          emailPort,
+          nodeEnv,
+          rateLimitDisabled,
+        },
+        instructions: {
+          message: "Please set EMAIL_USER and EMAIL_PASS in your .env file",
+          steps: [
+            "1. Create or update your .env file",
+            "2. Add: EMAIL_USER=your-email@gmail.com",
+            "3. Add: EMAIL_PASS=your-app-password (16 characters with spaces)",
+            "4. Get App Password: https://myaccount.google.com/apppasswords",
+            "5. Restart your server",
+          ],
+        },
+      });
+    }
 
     // Try to verify connection using the same method as the service
     const nodemailer = await import("nodemailer");
@@ -94,7 +120,7 @@ router.get("/email/diagnostic", async (req, res) => {
       service: "gmail",
       auth: {
         user: emailUser,
-        pass: process.env.EMAIL_PASS || "igjb befr pjim wcpg",
+        pass: process.env.EMAIL_PASS.trim(),
       },
       connectionTimeout: 30000,
       greetingTimeout: 30000,
@@ -158,6 +184,23 @@ router.get("/email/diagnostic", async (req, res) => {
       success: false,
       error: error.message,
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+  }
+});
+
+// Clear rate limit endpoint (useful for testing)
+router.post("/email/clear-rate-limit", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = clearEmailRateLimit(email);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error clearing rate limit",
     });
   }
 });

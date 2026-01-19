@@ -2,21 +2,57 @@ import nodemailer from "nodemailer";
 
 // Create transporter
 const createTransporter = () => {
-  // Use environment variables if available, otherwise fall back to hardcoded (for development)
-  const emailUser = (process.env.EMAIL_USER || "hasinadhungel15@gmail.com").trim();
-  // Gmail App Passwords may have spaces - keep them, but trim surrounding whitespace
-  const emailPass = (process.env.EMAIL_PASS || "igjb befr pjim wcpg").trim();
-  const emailHost = (process.env.EMAIL_HOST || "smtp.gmail.com").trim();
+  // Require environment variables - no hardcoded fallbacks for security
+  const emailUser = process.env.EMAIL_USER?.trim();
+  const emailPass = process.env.EMAIL_PASS?.trim();
+  const emailHost = process.env.EMAIL_HOST?.trim() || "smtp.gmail.com";
   const emailPort = parseInt(process.env.EMAIL_PORT || "587");
+
+  // Validate required credentials
+  if (!emailUser || !emailPass) {
+    throw new Error(
+      "EMAIL_USER and EMAIL_PASS must be set in .env file. " +
+      "For Gmail, use an App Password (not your regular password). " +
+      "Get one at: https://myaccount.google.com/apppasswords"
+    );
+  }
 
   console.log("📧 Email Configuration:");
   console.log("   User:", emailUser);
   console.log("   Host:", emailHost);
   console.log("   Port:", emailPort);
-  console.log("   Password:", emailPass ? "***" + emailPass.slice(-4) : "Not set");
+  console.log("   Password:", emailPass ? "***" + emailPass.slice(-4) : "❌ NOT SET");
+  console.log("   Password length:", emailPass ? emailPass.length : 0, "characters");
 
-  // If EMAIL_HOST is set, use custom SMTP configuration
+  // If EMAIL_HOST is set and it's Gmail, use Gmail service (more reliable)
+  // Otherwise use custom SMTP configuration
+  if (process.env.EMAIL_HOST && emailHost.toLowerCase().includes("gmail")) {
+    console.log("   Using Gmail service (recommended for Gmail accounts)");
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: emailUser,
+        pass: emailPass, // Use App Password, not regular password
+      },
+      // Add timeout and connection options
+      connectionTimeout: 30000, // 30 seconds (increased for better reliability)
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
+      // Debug mode for troubleshooting
+      debug: process.env.NODE_ENV === "development",
+      logger: process.env.NODE_ENV === "development",
+      // Additional options for better Gmail compatibility
+      secure: false, // Use TLS
+      requireTLS: true,
+      tls: {
+        rejectUnauthorized: false, // Allow self-signed certificates in development
+      },
+    });
+  }
+
+  // If EMAIL_HOST is set for non-Gmail, use custom SMTP configuration
   if (process.env.EMAIL_HOST) {
+    console.log("   Using custom SMTP configuration");
     return nodemailer.createTransport({
       host: emailHost,
       port: emailPort,
@@ -25,10 +61,23 @@ const createTransporter = () => {
         user: emailUser,
         pass: emailPass,
       },
+      // Add timeout and connection options
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
+      // Debug mode for troubleshooting
+      debug: process.env.NODE_ENV === "development",
+      logger: process.env.NODE_ENV === "development",
+      // TLS options
+      requireTLS: emailPort === 587,
+      tls: {
+        rejectUnauthorized: false, // Allow self-signed certificates in development
+      },
     });
   }
 
-  // Otherwise use Gmail service
+  // Otherwise use Gmail service (default)
+  console.log("   Using Gmail service (default)");
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -98,7 +147,24 @@ export const sendEmail = async ({ to, subject, text, html }) => {
       };
     }
 
-    const transporter = createTransporter();
+    let transporter;
+    try {
+      transporter = createTransporter();
+    } catch (configError) {
+      console.error("❌ Email configuration error!");
+      console.error("Error:", configError.message);
+      console.log("=".repeat(80) + "\n");
+      return {
+        success: false,
+        error: configError.message,
+        troubleshooting: [
+          "1. Check your .env file has EMAIL_USER and EMAIL_PASS set",
+          "2. For Gmail, use an App Password: https://myaccount.google.com/apppasswords",
+          "3. Make sure 2-Step Verification is enabled",
+          "4. Restart your server after updating .env",
+        ],
+      };
+    }
 
     // Verify connection with detailed error reporting
     console.log("🔍 Verifying email connection...");
@@ -144,8 +210,18 @@ export const sendEmail = async ({ to, subject, text, html }) => {
       };
     }
 
-    const emailUser = process.env.EMAIL_USER || "hasinadhungel15@gmail.com";
-    const emailFrom = process.env.EMAIL_FROM || `"Flame Beverage" <${emailUser}>`;
+    const emailUser = process.env.EMAIL_USER?.trim();
+    if (!emailUser) {
+      throw new Error("EMAIL_USER is not set in .env file");
+    }
+    // Handle EMAIL_FROM - remove surrounding quotes if present, or use default format
+    let emailFrom = process.env.EMAIL_FROM;
+    if (emailFrom) {
+      // Remove surrounding quotes if present (handles "Your Store Name <email@example.com>")
+      emailFrom = emailFrom.trim().replace(/^["']|["']$/g, '');
+    } else {
+      emailFrom = `"Flame Beverage" <${emailUser}>`;
+    }
 
     const mailOptions = {
       from: emailFrom,
@@ -788,6 +864,21 @@ export const sendOrderRejectionEmail = async (order, customerEmail) => {
   });
 };
 
+/**
+ * Clear rate limit for a specific email (useful for testing)
+ */
+export const clearEmailRateLimit = (email) => {
+  if (email) {
+    emailRateLimit.delete(email);
+    console.log(`✅ Rate limit cleared for: ${email}`);
+    return { success: true, message: `Rate limit cleared for ${email}` };
+  } else {
+    emailRateLimit.clear();
+    console.log("✅ All rate limits cleared");
+    return { success: true, message: "All rate limits cleared" };
+  }
+};
+
 export default {
   sendEmail,
   sendOrderConfirmationEmail,
@@ -796,5 +887,8 @@ export default {
   sendLowStockAlertEmail,
   sendPaymentConfirmationEmail,
   sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendPasswordResetConfirmationEmail,
+  clearEmailRateLimit,
 };
 
