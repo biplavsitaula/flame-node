@@ -69,6 +69,13 @@ const seedUsers = async () => {
         mobile: "9841000023",
         isActive: true,
       },
+      {
+        fullName: "Biplav",
+        email: "biplav0007@gmail.com",
+        password: "Vendor123!",
+        mobile: "9741705040",
+        isActive: true,
+      },
     ];
 
     // Hash passwords before inserting (insertMany doesn't trigger pre-save hooks)

@@ -201,10 +201,10 @@ export const requestPasswordReset = async (req, res) => {
       });
     }
     
-    res.status(200).json({
-      success: true,
-      message: result.message,
-    });
+    // res.status(200).json({
+    //   success: true,
+    //   message: result.message,
+    // });
   } catch (error) {
     res.status(500).json({
       success: false,

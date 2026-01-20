@@ -172,12 +172,12 @@ export const deleteUser = async (userId) => {
 export const forgotPassword = async (email) => {
   const user = await User.findOne({ email });
 
-  if (!user) {
-    // Don't reveal if user exists or not for security
-    return {
-      message: "If an account with that email exists, a password reset link has been sent.",
-    };
-  }
+  // if (!user) {
+  //   // Don't reveal if user exists or not for security
+  //   return {
+  //     message: "If an account with that email exists, a password reset link has been sent.",
+  //   };
+  // }
 
   // Generate reset token
   const { resetToken, resetPasswordToken, resetPasswordExpire } =
@@ -189,8 +189,8 @@ export const forgotPassword = async (email) => {
   await user.save({ validateBeforeSave: false });
 
   // Create reset URL (points to backend password reset page)
-  const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
-  const resetUrl = `${backendUrl}/reset-password/${resetToken}`;
+  const frontendUrl = process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+  const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
   // Send email with reset link
   let emailSent = false;
