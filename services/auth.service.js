@@ -172,12 +172,12 @@ export const deleteUser = async (userId) => {
 export const forgotPassword = async (email) => {
   const user = await User.findOne({ email });
 
-  // if (!user) {
-  //   // Don't reveal if user exists or not for security
-  //   return {
-  //     message: "If an account with that email exists, a password reset link has been sent.",
-  //   };
-  // }
+  // Don't reveal if user exists or not for security
+  if (!user) {
+    return {
+      message: "If an account with that email exists, a password reset link has been sent.",
+    };
+  }
 
   // Generate reset token
   const { resetToken, resetPasswordToken, resetPasswordExpire } =
