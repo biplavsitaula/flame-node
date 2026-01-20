@@ -21,6 +21,13 @@ const seedUsers = async () => {
         isActive: true,
       },
       {
+        fullName: "Hasina",
+        email: "hasinadhungel15@gmail.com",
+        password: "SuperAdmin123!",
+        mobile: "9841000001",
+        isActive: true,
+      },
+      {
         fullName: "Super Admin User",
         email: "superadmin2@flamebeverage.com",
         password: "SuperAdmin123!",
