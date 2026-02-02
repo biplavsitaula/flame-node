@@ -33,15 +33,18 @@ export const fetchAllSeasonalThemes = async (req, res) => {
  * GET /seasonal-themes/current
  * Fetch the current seasonal theme based on user's settings selection
  * Returns all theme attributes directly
+ * Returns empty array if theme is set to "none"
  */
 export const fetchCurrentSeasonalTheme = async (req, res) => {
   try {
     const theme = await getCurrentSeasonalTheme();
     
+    // If theme is null (set to "none"), return empty array
     if (!theme) {
-      return res.status(404).json({
-        success: false,
-        message: "No seasonal theme found",
+      return res.status(200).json({
+        success: true,
+        message: "No theme selected",
+        data: [],
       });
     }
 

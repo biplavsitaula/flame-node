@@ -155,6 +155,7 @@ export const getSeasonalThemeByKeyname = async (keyname) => {
 /**
  * Get current seasonal theme based on user's settings
  * Fetches the theme selected in settings and returns corresponding theme data
+ * Returns null if theme is set to "none"
  */
 export const getCurrentSeasonalTheme = async () => {
   // Initialize themes if not exist
@@ -163,6 +164,11 @@ export const getCurrentSeasonalTheme = async () => {
   // Get current settings to find selected theme
   const settings = await Settings.getSettings();
   const selectedTheme = settings.theme || "default";
+
+  // If theme is set to "none", return null (will be converted to empty array in controller)
+  if (selectedTheme.toLowerCase() === "none") {
+    return null;
+  }
 
   // Find the seasonal theme matching the selected theme
   let theme = await SeasonalTheme.findOne({
