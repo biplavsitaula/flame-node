@@ -8,22 +8,6 @@ dotenv.config();
 const productsData = [
   // Out of Stock Products (for Stock Alerts)
   {
-    name: "Grey Goose Vodka",
-    category: "Vodka",
-    brand: "Grey Goose",
-    price: 42.99,
-    discountPercent: 0,
-    stock: 0,
-    rating: 4.7,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 312,
-    reviewCount: 234,
-    tag: "New",
-  },
-  {
     name: "Moet & Chandon",
     category: "Champagne",
     brand: "Moet & Chandon",
@@ -38,6 +22,8 @@ const productsData = [
     totalSold: 198,
     reviewCount: 167,
     tag: "Best",
+    description: "Moet & Chandon Imperial is the House's iconic champagne, created in 1869. It embodies Moet & Chandon's unique style, distinguished by bright fruitiness and elegant maturity.",
+    specification: "Type: Brut | Region: Champagne, France | Grape: Pinot Noir, Chardonnay, Pinot Meunier | Serving Temp: 8-10°C",
   },
   
   // Low Stock Products (for Stock Alerts - going out of stock soon)
@@ -56,22 +42,8 @@ const productsData = [
     totalSold: 45,
     reviewCount: 98,
     tag: "New",
-  },
-  {
-    name: "Macallan 18 Year",
-    category: "Whiskey",
-    brand: "Macallan",
-    price: 349.99,
-    discountPercent: 0,
-    stock: 5,
-    rating: 5.0,
-    alcoholPercentage: 43,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: true,
-    totalSold: 34,
-    reviewCount: 89,
-    tag: "Best",
+    description: "Hennessy X.O is a bold and rich cognac, blending over 100 eaux-de-vie for a deep, complex flavor with notes of candied fruit, chocolate, and spice.",
+    specification: "Type: Extra Old Cognac | Region: Cognac, France | Aging: Minimum 10 years | Serving: Neat or on ice",
   },
   {
     name: "Chivas Regal 18",
@@ -88,22 +60,8 @@ const productsData = [
     totalSold: 78,
     reviewCount: 92,
     tag: "Super",
-  },
-  {
-    name: "Patron Silver",
-    category: "Tequila",
-    brand: "Patron",
-    price: 89.99,
-    discountPercent: 8,
-    stock: 6,
-    rating: 4.6,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 112,
-    reviewCount: 134,
-    tag: "Super",
+    description: "Chivas Regal 18 Year Old is a luxurious blended Scotch whisky with rich, velvety flavors of dark chocolate, dried fruit, and a hint of smokiness.",
+    specification: "Type: Blended Scotch | Region: Scotland | Aging: 18 years | Serving: Neat, on the rocks, or with a splash of water",
   },
   
   // Top Sellers (High Sales)
@@ -122,6 +80,8 @@ const productsData = [
     totalSold: 567,
     reviewCount: 456,
     tag: "Try",
+    description: "Captain Morgan Original Spiced Rum is a smooth and medium-bodied rum blended with secret spices for a taste that's rich and full of flavor.",
+    specification: "Type: Spiced Rum | Origin: Jamaica & Puerto Rico | Aging: Up to 1 year | Best with: Cola, ginger beer, or cocktails",
   },
   {
     name: "Bombay Sapphire",
@@ -138,6 +98,8 @@ const productsData = [
     totalSold: 423,
     reviewCount: 312,
     tag: "Try",
+    description: "Bombay Sapphire is a premium London Dry Gin infused with 10 exotic botanicals, delivering a complex yet balanced flavor with bright citrus notes.",
+    specification: "Type: London Dry Gin | Origin: England | Botanicals: 10 hand-selected | Best with: Tonic water, lime, and G&T cocktails",
   },
   
   // Recommended Products (High Rating + Recommended)
@@ -156,169 +118,11 @@ const productsData = [
     totalSold: 156,
     reviewCount: 187,
     tag: "Try",
-  },
-  {
-    name: "Johnnie Walker Blue Label",
-    category: "Whiskey",
-    brand: "Johnnie Walker",
-    price: 189.99,
-    discountPercent: 10,
-    stock: 24,
-    rating: 4.9,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: true,
-    totalSold: 89,
-    reviewCount: 156,
-    tag: "Try",
-  },
-  {
-    name: "Dom Perignon",
-    category: "Champagne",
-    brand: "Dom Perignon",
-    price: 249.99,
-    discountPercent: 0,
-    stock: 15,
-    rating: 4.8,
-    alcoholPercentage: 12.5,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: true,
-    totalSold: 67,
-    reviewCount: 89,
-    tag: "Nice",
-  },
-  {
-    name: "Glenfiddich 21 Year",
-    category: "Whiskey",
-    brand: "Glenfiddich",
-    price: 299.99,
-    discountPercent: 5,
-    stock: 18,
-    rating: 4.9,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: true,
-    totalSold: 56,
-    reviewCount: 78,
-    tag: "Nice",
+    description: "Don Julio 1942 is a luxury añejo tequila aged for a minimum of two and a half years, offering warm notes of caramel, toffee, and vanilla with a silky finish.",
+    specification: "Type: Añejo Tequila | Region: Jalisco, Mexico | Agave: 100% Blue Weber | Aging: 2.5 years in American white oak",
   },
   
   // Products with Various Discounts/Offers
-  {
-    name: "Jack Daniel's",
-    category: "Whiskey",
-    brand: "Jack Daniel's",
-    price: 29.99,
-    discountPercent: 5,
-    stock: 45,
-    rating: 4.4,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 234,
-    reviewCount: 189,
-    tag: "Try",
-  },
-  {
-    name: "Absolut Vodka",
-    category: "Vodka",
-    brand: "Absolut",
-    price: 24.99,
-    discountPercent: 8,
-    stock: 56,
-    rating: 4.2,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 178,
-    reviewCount: 145,
-    tag: "Try",
-  },
-  {
-    name: "Bacardi Superior",
-    category: "Rum",
-    brand: "Bacardi",
-    price: 18.99,
-    discountPercent: 15,
-    stock: 72,
-    rating: 4.1,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 298,
-    reviewCount: 201,
-    tag: "Try",
-  },
-  {
-    name: "Tanqueray London Dry",
-    category: "Gin",
-    brand: "Tanqueray",
-    price: 32.99,
-    discountPercent: 12,
-    stock: 48,
-    rating: 4.4,
-    alcoholPercentage: 47.3,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 156,
-    reviewCount: 123,
-    tag: "Try",
-  },
-  {
-    name: "Jameson Irish Whiskey",
-    category: "Whiskey",
-    brand: "Jameson",
-    price: 34.99,
-    discountPercent: 0,
-    stock: 62,
-    rating: 4.3,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 201,
-    reviewCount: 167,
-    tag: "Try",
-  },
-  {
-    name: "Ketel One Vodka",
-    category: "Vodka",
-    brand: "Ketel One",
-    price: 39.99,
-    discountPercent: 10,
-    stock: 38,
-    rating: 4.5,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 134,
-    reviewCount: 98,
-    tag: "Try",
-  },
-  {
-    name: "Ciroc Vodka",
-    category: "Vodka",
-    brand: "Ciroc",
-    price: 44.99,
-    discountPercent: 18,
-    stock: 41,
-    rating: 4.6,
-    alcoholPercentage: 40,
-    volume: "750ml",
-    imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
-    isRecommended: false,
-    totalSold: 98,
-    reviewCount: 76,
-    tag: "Try",
-  },
   {
     name: "Remy Martin VSOP",
     category: "Cognac",
@@ -334,6 +138,8 @@ const productsData = [
     totalSold: 87,
     reviewCount: 112,
     tag: "Try",
+    description: "Remy Martin VSOP is a well-balanced cognac with a rich bouquet of stone fruit, vanilla, and licorice, matured exclusively from the finest vineyards.",
+    specification: "Type: VSOP Cognac | Region: Cognac, France | Aging: Minimum 4 years | Serving: Neat, on ice, or in cocktails",
   },
 ];
 
@@ -404,3 +210,412 @@ const seedProducts = async () => {
 };
 
 seedProducts();
+
+
+
+// import mongoose from "mongoose";
+// import dotenv from "dotenv";
+// import connectDB from "../config/db.js";
+// import Product from "../models/product.models.js";
+
+// dotenv.config();
+
+// const productsData = [
+//   // Out of Stock Products (for Stock Alerts)
+//   {
+//     name: "Grey Goose Vodka",
+//     category: "Vodka",
+//     brand: "Grey Goose",
+//     price: 42.99,
+//     discountPercent: 0,
+//     stock: 0,
+//     rating: 4.7,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 312,
+//     reviewCount: 234,
+//     tag: "New",
+//   },
+//   {
+//     name: "Moet & Chandon",
+//     category: "Champagne",
+//     brand: "Moet & Chandon",
+//     price: 59.99,
+//     discountPercent: 0,
+//     stock: 0,
+//     rating: 4.6,
+//     alcoholPercentage: 12,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 198,
+//     reviewCount: 167,
+//     tag: "Best",
+//   },
+  
+//   // Low Stock Products (for Stock Alerts - going out of stock soon)
+//   {
+//     name: "Hennessy XO",
+//     category: "Cognac",
+//     brand: "Hennessy",
+//     price: 229.99,
+//     discountPercent: 15,
+//     stock: 8,
+//     rating: 4.8,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: true,
+//     totalSold: 45,
+//     reviewCount: 98,
+//     tag: "New",
+//   },
+//   {
+//     name: "Macallan 18 Year",
+//     category: "Whiskey",
+//     brand: "Macallan",
+//     price: 349.99,
+//     discountPercent: 0,
+//     stock: 5,
+//     rating: 5.0,
+//     alcoholPercentage: 43,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: true,
+//     totalSold: 34,
+//     reviewCount: 89,
+//     tag: "Best",
+//   },
+//   {
+//     name: "Chivas Regal 18",
+//     category: "Whiskey",
+//     brand: "Chivas Regal",
+//     price: 129.99,
+//     discountPercent: 12,
+//     stock: 7,
+//     rating: 4.7,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 78,
+//     reviewCount: 92,
+//     tag: "Super",
+//   },
+//   {
+//     name: "Patron Silver",
+//     category: "Tequila",
+//     brand: "Patron",
+//     price: 89.99,
+//     discountPercent: 8,
+//     stock: 6,
+//     rating: 4.6,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 112,
+//     reviewCount: 134,
+//     tag: "Super",
+//   },
+  
+//   // Top Sellers (High Sales)
+//   {
+//     name: "Captain Morgan Spiced",
+//     category: "Rum",
+//     brand: "Captain Morgan",
+//     price: 19.99,
+//     discountPercent: 10,
+//     stock: 89,
+//     rating: 4.3,
+//     alcoholPercentage: 35,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400",
+//     isRecommended: false,
+//     totalSold: 567,
+//     reviewCount: 456,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Bombay Sapphire",
+//     category: "Gin",
+//     brand: "Bombay Sapphire",
+//     price: 28.99,
+//     discountPercent: 20,
+//     stock: 67,
+//     rating: 4.5,
+//     alcoholPercentage: 47,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400",
+//     isRecommended: false,
+//     totalSold: 423,
+//     reviewCount: 312,
+//     tag: "Try",
+//   },
+  
+//   // Recommended Products (High Rating + Recommended)
+//   {
+//     name: "Don Julio 1942",
+//     category: "Tequila",
+//     brand: "Don Julio",
+//     price: 159.99,
+//     discountPercent: 5,
+//     stock: 32,
+//     rating: 4.9,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: true,
+//     totalSold: 156,
+//     reviewCount: 187,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Johnnie Walker Blue Label",
+//     category: "Whiskey",
+//     brand: "Johnnie Walker",
+//     price: 189.99,
+//     discountPercent: 10,
+//     stock: 24,
+//     rating: 4.9,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: true,
+//     totalSold: 89,
+//     reviewCount: 156,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Dom Perignon",
+//     category: "Champagne",
+//     brand: "Dom Perignon",
+//     price: 249.99,
+//     discountPercent: 0,
+//     stock: 15,
+//     rating: 4.8,
+//     alcoholPercentage: 12.5,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: true,
+//     totalSold: 67,
+//     reviewCount: 89,
+//     tag: "Nice",
+//   },
+//   {
+//     name: "Glenfiddich 21 Year",
+//     category: "Whiskey",
+//     brand: "Glenfiddich",
+//     price: 299.99,
+//     discountPercent: 5,
+//     stock: 18,
+//     rating: 4.9,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: true,
+//     totalSold: 56,
+//     reviewCount: 78,
+//     tag: "Nice",
+//   },
+  
+//   // Products with Various Discounts/Offers
+//   {
+//     name: "Jack Daniel's",
+//     category: "Whiskey",
+//     brand: "Jack Daniel's",
+//     price: 29.99,
+//     discountPercent: 5,
+//     stock: 45,
+//     rating: 4.4,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 234,
+//     reviewCount: 189,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Absolut Vodka",
+//     category: "Vodka",
+//     brand: "Absolut",
+//     price: 24.99,
+//     discountPercent: 8,
+//     stock: 56,
+//     rating: 4.2,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 178,
+//     reviewCount: 145,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Bacardi Superior",
+//     category: "Rum",
+//     brand: "Bacardi",
+//     price: 18.99,
+//     discountPercent: 15,
+//     stock: 72,
+//     rating: 4.1,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 298,
+//     reviewCount: 201,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Tanqueray London Dry",
+//     category: "Gin",
+//     brand: "Tanqueray",
+//     price: 32.99,
+//     discountPercent: 12,
+//     stock: 48,
+//     rating: 4.4,
+//     alcoholPercentage: 47.3,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 156,
+//     reviewCount: 123,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Jameson Irish Whiskey",
+//     category: "Whiskey",
+//     brand: "Jameson",
+//     price: 34.99,
+//     discountPercent: 0,
+//     stock: 62,
+//     rating: 4.3,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 201,
+//     reviewCount: 167,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Ketel One Vodka",
+//     category: "Vodka",
+//     brand: "Ketel One",
+//     price: 39.99,
+//     discountPercent: 10,
+//     stock: 38,
+//     rating: 4.5,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 134,
+//     reviewCount: 98,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Ciroc Vodka",
+//     category: "Vodka",
+//     brand: "Ciroc",
+//     price: 44.99,
+//     discountPercent: 18,
+//     stock: 41,
+//     rating: 4.6,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 98,
+//     reviewCount: 76,
+//     tag: "Try",
+//   },
+//   {
+//     name: "Remy Martin VSOP",
+//     category: "Cognac",
+//     brand: "Remy Martin",
+//     price: 79.99,
+//     discountPercent: 0,
+//     stock: 28,
+//     rating: 4.7,
+//     alcoholPercentage: 40,
+//     volume: "750ml",
+//     imageUrl: "https://images.unsplash.com/photo-1608848942187-4d1c8a3e4b3a?w=400",
+//     isRecommended: false,
+//     totalSold: 87,
+//     reviewCount: 112,
+//     tag: "Try",
+//   },
+// ];
+
+// // Helper function to assign subCategory based on category and product name
+// const getSubCategory = (category, name) => {
+//   const cat = category.toLowerCase();
+//   if (cat === "whiskey") {
+//     if (name.includes("Macallan") || name.includes("Glenfiddich")) {
+//       return "Single Malt";
+//     } else if (name.includes("Jack Daniel")) {
+//       return "Bourbon";
+//     } else if (name.includes("Jameson")) {
+//       return "Irish";
+//     } else {
+//       return "Blended";
+//     }
+//   } else if (cat === "vodka") {
+//     return "Premium";
+//   } else if (cat === "rum") {
+//     return "Aged";
+//   } else if (cat === "gin") {
+//     return "London Dry";
+//   } else if (cat === "tequila") {
+//     return "Anejo";
+//   } else if (cat === "cognac") {
+//     return "VSOP";
+//   } else if (cat === "champagne") {
+//     return "Brut";
+//   } else if (cat === "wine") {
+//     return "Red";
+//   } else if (cat === "beer") {
+//     return "Lager";
+//   } else if (cat === "brandy") {
+//     return "Aged";
+//   }
+//   return "";
+// };
+
+// // Calculate discountAmount and finalPrice for each product, and add subCategory and originType
+// const products = productsData.map((product) => {
+//   const discountAmount = (product.price * product.discountPercent) / 100;
+//   const finalPrice = product.price - discountAmount;
+//   return {
+//     ...product,
+//     discountAmount: Math.round(discountAmount * 100) / 100,
+//     finalPrice: Math.round(finalPrice * 100) / 100,
+//     subCategory: getSubCategory(product.category, product.name),
+//     originType: "Imported", // Most products are imported
+//   };
+// });
+
+// const seedProducts = async () => {
+//   try {
+//     await connectDB();
+
+//     // Clear existing data
+//     await Product.deleteMany();
+
+//     // Insert products (discountAmount and finalPrice will be auto-calculated)
+//     const insertedProducts = await Product.insertMany(products);
+
+//     console.log(`✅ ${insertedProducts.length} products seeded successfully!`);
+//     process.exit();
+//   } catch (error) {
+//     console.error("❌ Seeding failed:", error);
+//     process.exit(1);
+//   }
+// };
+
+// seedProducts();

@@ -109,6 +109,10 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    specification: {
+      type: String,
+      trim: true,
+    },
     subCategory: {
       type: String,
       trim: true,
