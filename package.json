@@ -1,52 +1,53 @@
 {
- "name": "app",
- "version": "1.0.0",
- "description": "",
- "main": "server.js",
- "scripts": {
-  "test": "echo \"Error: no test specified\" && exit 1",
-  "dev": "nodemon server.js",
-  "seed": "node ./seeders/product.js",
-  "seed:user": "node ./seeders/user.js",
-  "seed:users": "node ./seeders/user.js",
-  "seed:products": "node ./seeders/product.js",
-  "seed:orders": "node ./seeders/order.js",
-  "seed:payments": "node ./seeders/payment.js",
-  "seed:reviews": "node ./seeders/review.js",
-  "seed:notifications": "node ./seeders/notification.js",
-"seed:settings": "node ./seeders/settings.js",
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js",
+    "seed": "node ./seeders/product.js",
+    "seed:user": "node ./seeders/user.js",
+    "seed:users": "node ./seeders/user.js",
+    "seed:products": "node ./seeders/product.js",
+    "seed:orders": "node ./seeders/order.js",
+    "seed:payments": "node ./seeders/payment.js",
+    "seed:reviews": "node ./seeders/review.js",
+    "seed:notifications": "node ./seeders/notification.js",
+    "seed:settings": "node ./seeders/settings.js",
     "seed:seasonal-themes": "node ./seeders/seasonalTheme.js",
     "seed:offers": "node ./seeders/offer.js",
     "seed:feature-images": "node ./seeders/featureImage.js",
     "seed:brands": "node ./seeders/brand.js",
-    "seed:all": "node ./seeders/user.js && node ./seeders/product.js && node ./seeders/order.js && node ./seeders/payment.js && node ./seeders/review.js && node ./seeders/notification.js && node ./seeders/settings.js && node ./seeders/seasonalTheme.js && node ./seeders/offer.js && node ./seeders/featureImage.js && node ./seeders/brand.js"
- },
- "repository": {
-  "type": "git",
-  "url": "git+https://github.com/biplavsitaula/local-node.git"
- },
- "keywords": [],
- "author": "",
- "license": "ISC",
- "type": "module",
- "bugs": {
-  "url": "https://github.com/biplavsitaula/local-node/issues"
- },
- "homepage": "https://github.com/biplavsitaula/local-node#readme",
- "dependencies": {
-  "bcryptjs": "^2.4.3",
-  "cloudinary": "^1.41.0",
-  "cors": "^2.8.5",
-  "dotenv": "^17.2.3",
-  "exceljs": "^4.4.0",
-  "express": "^5.2.1",
-  "jsonwebtoken": "^9.0.3",
-  "mongoose": "^9.0.2",
-  "multer": "^1.4.5-lts.1",
-  "nodemailer": "^7.0.12",
-  "pdfkit": "^0.14.0"
- },
- "devDependencies": {
-  "nodemon": "^3.1.11"
- }
+    "seed:customer-dashboard": "node ./seeders/customerDashboard.js",
+    "seed:all": "node ./seeders/user.js && node ./seeders/product.js && node ./seeders/order.js && node ./seeders/payment.js && node ./seeders/review.js && node ./seeders/notification.js && node ./seeders/settings.js && node ./seeders/seasonalTheme.js && node ./seeders/offer.js && node ./seeders/featureImage.js && node ./seeders/brand.js && node ./seeders/customerDashboard.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/biplavsitaula/local-node.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/biplavsitaula/local-node/issues"
+  },
+  "homepage": "https://github.com/biplavsitaula/local-node#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.41.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.12",
+    "pdfkit": "^0.14.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
 }
