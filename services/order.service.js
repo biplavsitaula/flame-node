@@ -552,6 +552,23 @@ export const acceptOrder = async (orderId) => {
     console.log(`⚠️  No email address found for order ${order.billNumber}. Skipping email notification.`);
   }
 
+  // Credit 100 loyalty points to customer on order acceptance
+  if (!order.loyaltyPointsCredited && updatedOrder.customer?.email) {
+    try {
+      const user = await User.findOne({ email: updatedOrder.customer.email });
+      if (user) {
+        await addLoyaltyPoints(user._id, 100, `Order ${order.billNumber} accepted`);
+        await Order.findByIdAndUpdate(orderId, { loyaltyPointsCredited: true });
+        console.log(`✅ 100 loyalty points credited to ${updatedOrder.customer.email} for order ${order.billNumber}`);
+      } else {
+        console.log(`⚠️  No registered user found for email ${updatedOrder.customer.email}. Skipping loyalty points.`);
+      }
+    } catch (loyaltyError) {
+      console.error(`❌ Failed to credit loyalty points for order ${order.billNumber}:`, loyaltyError.message);
+      // Don't throw - order is already accepted, loyalty failure shouldn't block the process
+    }
+  }
+
   return updatedOrder;
 };
 
