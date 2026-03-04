@@ -3,6 +3,9 @@ import Product from "../models/product.models.js";
 import Payment from "../models/payment.models.js";
 import Notification from "../models/notification.models.js";
 import Inventory from "../models/inventory.model.js";
+import User from "../models/user.models.js";
+import CustomerDashboard from "../models/customerDashboard.model.js";
+import { addLoyaltyPoints, deductLoyaltyPoints } from "./customerDashboard.service.js";
 
 export const getAllOrders = async (query = {}) => {
   const {
@@ -108,8 +111,8 @@ export const createOrder = async (orderData) => {
   const subtotal = itemsWithTotals.reduce((sum, item) => sum + item.total, 0);
 
   // Calculate delivery fee (free if subtotal >= 2000)
-  const deliveryFee = orderData.deliveryFee !== undefined 
-    ? orderData.deliveryFee 
+  const deliveryFee = orderData.deliveryFee !== undefined
+    ? orderData.deliveryFee
     : (subtotal >= 2000 ? 0 : 500);
 
   // Calculate total amount
@@ -124,7 +127,7 @@ export const createOrder = async (orderData) => {
       {},
       { sort: { billNumber: -1 } }
     );
-    
+
     let nextBillNumber = 1;
     if (lastOrder && lastOrder.billNumber) {
       const lastBillParts = lastOrder.billNumber.split("-");
@@ -299,7 +302,7 @@ export const checkout = async (checkoutData) => {
     {},
     { sort: { billNumber: -1 } }
   );
-  
+
   let nextBillNumber = 1;
   if (lastOrder && lastOrder.billNumber) {
     const lastBillParts = lastOrder.billNumber.split("-");
@@ -350,8 +353,8 @@ export const checkout = async (checkoutData) => {
     method: savedOrder.paymentMethod,
     gateway: savedOrder.paymentGateway,
     status: savedOrder.paymentStatus,
-    notes: paymentMethod === "online" 
-      ? `Paid via ${paymentGateway}` 
+    notes: paymentMethod === "online"
+      ? `Paid via ${paymentGateway}`
       : "Cash on Delivery",
   });
 
@@ -437,7 +440,7 @@ export const updateOrderStatus = async (id, status) => {
  */
 export const acceptOrder = async (orderId) => {
   const order = await Order.findById(orderId);
-  
+
   if (!order) {
     throw new Error("Order not found");
   }
@@ -557,7 +560,7 @@ export const acceptOrder = async (orderId) => {
  */
 export const rejectOrder = async (orderId, rejectionReason = "") => {
   const order = await Order.findById(orderId);
-  
+
   if (!order) {
     throw new Error("Order not found");
   }
@@ -615,6 +618,132 @@ export const rejectOrder = async (orderId, rejectionReason = "") => {
   }
 
   return updatedOrder;
+};
+
+/**
+ * Calculate and credit loyalty points for a delivered order
+ * Points formula: Math.floor((orderTotal / 100) * tierMultiplier)
+ * Tier multipliers: Silver=1x, Gold=1.5x, Platinum=2x, Bronze=1x
+ */
+export const calculateAndCreditLoyaltyPoints = async (orderId, userId) => {
+  // Fetch the order
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // Check if order is delivered
+  if (order.status !== "delivered") {
+    throw new Error("Loyalty points can only be awarded for delivered orders");
+  }
+
+  // Check if points already credited
+  if (order.loyaltyPointsCredited) {
+    throw new Error("Loyalty points have already been credited for this order");
+  }
+
+  // Verify user exists
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Get or create customer dashboard to find tier
+  let dashboard = await CustomerDashboard.findOne({ userId });
+  if (!dashboard) {
+    dashboard = new CustomerDashboard({ userId });
+    await dashboard.save();
+  }
+
+  // Determine tier multiplier
+  const tierMultipliers = {
+    Bronze: 1,
+    Silver: 1,
+    Gold: 1.5,
+    Platinum: 2,
+  };
+  const multiplier = tierMultipliers[dashboard.membershipTier] || 1;
+
+  // Calculate points
+  const orderTotal = order.totalAmount;
+  const earnedPoints = Math.floor((orderTotal / 100) * multiplier);
+
+  if (earnedPoints <= 0) {
+    throw new Error("Order total too low to earn loyalty points");
+  }
+
+  // Credit points using existing service
+  await addLoyaltyPoints(userId, earnedPoints);
+
+  // Mark order as loyalty points credited
+  order.loyaltyPointsCredited = true;
+  await order.save();
+
+  // Get updated dashboard for total points
+  const updatedDashboard = await CustomerDashboard.findOne({ userId }).lean();
+
+  return {
+    earnedPoints,
+    totalLoyaltyPoints: updatedDashboard.loyaltyPoints,
+    membershipTier: updatedDashboard.membershipTier,
+    tierMultiplier: multiplier,
+  };
+};
+
+/**
+ * Deduct loyalty points for a cancelled/refunded order
+ * Only deducts if points were previously credited
+ */
+export const deductLoyaltyPointsForOrder = async (orderId, userId) => {
+  // Fetch the order
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // Check if points were credited
+  if (!order.loyaltyPointsCredited) {
+    throw new Error("No loyalty points were credited for this order");
+  }
+
+  // Verify user exists
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Get customer dashboard to find tier
+  const dashboard = await CustomerDashboard.findOne({ userId });
+  if (!dashboard) {
+    throw new Error("Customer dashboard not found");
+  }
+
+  // Recalculate the same points that were credited
+  const tierMultipliers = {
+    Bronze: 1,
+    Silver: 1,
+    Gold: 1.5,
+    Platinum: 2,
+  };
+  const multiplier = tierMultipliers[dashboard.membershipTier] || 1;
+  const orderTotal = order.totalAmount;
+  const pointsToDeduct = Math.floor((orderTotal / 100) * multiplier);
+
+  // Deduct points
+  await deductLoyaltyPoints(userId, pointsToDeduct);
+
+  // Mark order as loyalty points not credited
+  order.loyaltyPointsCredited = false;
+  await order.save();
+
+  // Get updated dashboard
+  const updatedDashboard = await CustomerDashboard.findOne({ userId }).lean();
+
+  return {
+    deductedPoints: pointsToDeduct,
+    totalLoyaltyPoints: updatedDashboard.loyaltyPoints,
+    membershipTier: updatedDashboard.membershipTier,
+  };
 };
 
 export const deleteOrder = async (id) => {

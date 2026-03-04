@@ -115,6 +115,10 @@ const OrderSchema = new mongoose.Schema(
       enum: ["pending", "completed"],
       default: "pending",
     },
+    loyaltyPointsCredited: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

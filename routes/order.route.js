@@ -9,6 +9,7 @@ import {
   processCheckout,
   acceptOrderController,
   rejectOrderController,
+  calculateLoyaltyPointsController,
 } from "../controller/order.controller.js";
 import { authenticate, checkSuperAdmin, checkAdminViewOnly } from "../middleware/auth.middleware.js";
 
@@ -33,6 +34,9 @@ router.delete("/orders/:id", authenticate, checkSuperAdmin, deleteOrderById);
 // Order acceptance/rejection (super_admin only)
 router.post("/orders/:id/accept", authenticate, checkSuperAdmin, acceptOrderController);
 router.post("/orders/:id/reject", authenticate, checkSuperAdmin, rejectOrderController);
+
+// Loyalty points calculation (authenticated users)
+router.post("/orders/:id/loyalty-points", authenticate, calculateLoyaltyPointsController);
 
 export default router;
 

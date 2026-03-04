@@ -217,6 +217,63 @@ export const addLoyaltyPoints = async (userId, points, reason = "") => {
 };
 
 /**
+ * Deduct loyalty points (for cancelled/refunded orders)
+ */
+export const deductLoyaltyPoints = async (userId, points) => {
+    if (points <= 0) {
+        throw new Error("Points must be a positive number");
+    }
+
+    const dashboard = await CustomerDashboard.findOne({ userId });
+    if (!dashboard) {
+        throw new Error("Dashboard not found");
+    }
+
+    // Deduct points but don't go below 0
+    const actualDeduction = Math.min(points, dashboard.loyaltyPoints);
+
+    await CustomerDashboard.findOneAndUpdate(
+        { userId },
+        {
+            $inc: {
+                loyaltyPoints: -actualDeduction,
+                totalPointsEarned: -actualDeduction,
+            },
+        },
+        { new: true }
+    );
+
+    // Recalculate membership tier after deduction
+    const updatedDashboard = await CustomerDashboard.findOne({ userId });
+    const totalEarned = updatedDashboard.totalPointsEarned;
+    let newTier = "Bronze";
+    let tierProgress = 0;
+
+    if (totalEarned >= 10000) {
+        newTier = "Platinum";
+        tierProgress = 100;
+    } else if (totalEarned >= 5000) {
+        newTier = "Gold";
+        tierProgress = Math.round(((totalEarned - 5000) / 5000) * 100);
+    } else if (totalEarned >= 2000) {
+        newTier = "Silver";
+        tierProgress = Math.round(((totalEarned - 2000) / 3000) * 100);
+    } else {
+        newTier = "Bronze";
+        tierProgress = Math.round((totalEarned / 2000) * 100);
+    }
+
+    await CustomerDashboard.findOneAndUpdate(
+        { userId },
+        { membershipTier: newTier, tierProgress: Math.min(tierProgress, 100) }
+    );
+
+    return await CustomerDashboard.findOne({ userId })
+        .populate("userId", "fullName email mobile")
+        .lean();
+};
+
+/**
  * Redeem loyalty points
  */
 export const redeemLoyaltyPoints = async (userId, points) => {

@@ -8,6 +8,8 @@ import {
   checkout,
   acceptOrder,
   rejectOrder,
+  calculateAndCreditLoyaltyPoints,
+  deductLoyaltyPointsForOrder,
 } from "../services/order.service.js";
 
 export const fetchAllOrders = async (req, res) => {
@@ -37,13 +39,13 @@ export const fetchOrderById = async (req, res) => {
         message: "Order not found",
       });
     }
-    
+
     // Format response with status information for frontend
     let statusMessage = "";
     let buttonText = "";
     let showSuccess = false;
     let showReject = false;
-    
+
     switch (order.status) {
       case "pending":
         statusMessage = "Waiting for admin approval";
@@ -78,7 +80,7 @@ export const fetchOrderById = async (req, res) => {
         statusMessage = "Order status: " + order.status;
         buttonText = order.status;
     }
-    
+
     res.status(200).json({
       success: true,
       message: "Order fetched successfully",
@@ -114,13 +116,13 @@ export const fetchOrderByBillNumber = async (req, res) => {
         message: "Order not found",
       });
     }
-    
+
     // Format response with status information for frontend
     let statusMessage = "";
     let buttonText = "";
     let showSuccess = false;
     let showReject = false;
-    
+
     switch (order.status) {
       case "pending":
         statusMessage = "Waiting for admin approval";
@@ -155,7 +157,7 @@ export const fetchOrderByBillNumber = async (req, res) => {
         statusMessage = "Order status: " + order.status;
         buttonText = order.status;
     }
-    
+
     res.status(200).json({
       success: true,
       message: "Order fetched successfully",
@@ -256,16 +258,16 @@ export const deleteOrderById = async (req, res) => {
 export const processCheckout = async (req, res) => {
   try {
     const result = await checkout(req.body);
-    
+
     // Get order status
     const orderStatus = result.order?.status || "pending";
-    
+
     // Determine message, button text, and flags based on order status
     let message = "Order placed successfully. Waiting for admin approval.";
     let buttonText = "Pending Approval";
     let showSuccess = false;
     let showReject = false;
-    
+
     switch (orderStatus) {
       case "pending":
         message = "Order placed successfully. Waiting for admin approval.";
@@ -277,7 +279,7 @@ export const processCheckout = async (req, res) => {
         showSuccess = true;
         break;
       case "rejected":
-        message = result.order?.rejectionReason 
+        message = result.order?.rejectionReason
           ? `Order rejected: ${result.order.rejectionReason}`
           : "Order has been rejected. Please contact support.";
         buttonText = "Order Rejected";
@@ -302,7 +304,7 @@ export const processCheckout = async (req, res) => {
         message = "Order placed successfully";
         buttonText = orderStatus;
     }
-    
+
     res.status(201).json({
       success: true,
       message,
@@ -375,8 +377,8 @@ export const rejectOrderController = async (req, res) => {
     const order = await rejectOrder(id, rejectionReason);
     res.status(200).json({
       success: true,
-      message: rejectionReason 
-        ? `Order rejected: ${rejectionReason}` 
+      message: rejectionReason
+        ? `Order rejected: ${rejectionReason}`
         : "Order rejected successfully",
       status: "rejected",
       data: {
@@ -396,6 +398,92 @@ export const rejectOrderController = async (req, res) => {
     res.status(400).json({
       success: false,
       message: error.message || "Error rejecting order",
+    });
+  }
+};
+
+/**
+ * POST /orders/:id/loyalty-points
+ * Calculate and update loyalty points for an order
+ * Accepts: { userId, orderTotal, orderStatus }
+ */
+export const calculateLoyaltyPointsController = async (req, res) => {
+  const { id } = req.params;
+  const { userId, orderTotal, orderStatus } = req.body;
+
+  try {
+    // Validate required fields
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
+
+    if (orderTotal === undefined || orderTotal === null) {
+      return res.status(400).json({
+        success: false,
+        message: "orderTotal is required",
+      });
+    }
+
+    if (!orderStatus) {
+      return res.status(400).json({
+        success: false,
+        message: "orderStatus is required",
+      });
+    }
+
+    if (typeof orderTotal !== "number" || orderTotal < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "orderTotal must be a non-negative number",
+      });
+    }
+
+    const normalizedStatus = orderStatus.toLowerCase();
+
+    // Handle cancelled/refunded orders - deduct points if already credited
+    if (normalizedStatus === "cancelled" || normalizedStatus === "refunded" || normalizedStatus === "rejected") {
+      try {
+        const result = await deductLoyaltyPointsForOrder(id, userId);
+        return res.status(200).json({
+          success: true,
+          message: `${result.deductedPoints} loyalty points deducted for ${normalizedStatus} order`,
+          deductedPoints: result.deductedPoints,
+          totalLoyaltyPoints: result.totalLoyaltyPoints,
+          membershipTier: result.membershipTier,
+        });
+      } catch (deductError) {
+        return res.status(400).json({
+          success: false,
+          message: deductError.message || "Error deducting loyalty points",
+        });
+      }
+    }
+
+    // Only award points for delivered orders
+    if (normalizedStatus !== "delivered") {
+      return res.status(400).json({
+        success: false,
+        message: "Loyalty points can only be awarded for delivered orders. Current status: " + orderStatus,
+      });
+    }
+
+    // Calculate and credit loyalty points
+    const result = await calculateAndCreditLoyaltyPoints(id, userId);
+
+    res.status(200).json({
+      success: true,
+      earnedPoints: result.earnedPoints,
+      totalLoyaltyPoints: result.totalLoyaltyPoints,
+      membershipTier: result.membershipTier,
+      tierMultiplier: result.tierMultiplier,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || "Error calculating loyalty points",
     });
   }
 };
