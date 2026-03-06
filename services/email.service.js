@@ -879,6 +879,57 @@ export const clearEmailRateLimit = (email) => {
   }
 };
 
+/**
+ * Send referral invitation email
+ */
+export const sendReferralInvitationEmail = async (friendEmail, friendName, referrerName, referralCode) => {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #FF5050 0%, #FF8C00 100%); padding: 30px; text-align: center;">
+        <h1 style="color: white; margin: 0;">🎁 You've been invited!</h1>
+      </div>
+      
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333;">Hello ${friendName},</h2>
+        
+        <p style="color: #666; font-size: 16px;">
+          Your friend <strong>${referrerName}</strong> has invited you to join Flame Beverage!
+        </p>
+        
+        <p style="color: #666; font-size: 16px;">
+          Sign up using their referral code and get an exclusive reward on your first order.
+        </p>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <p style="margin: 0; color: #333; font-size: 14px; text-transform: uppercase;">Referral Code</p>
+          <p style="margin: 10px 0 0 0; color: #FF5050; font-size: 24px; font-weight: bold; letter-spacing: 2px;">
+            ${referralCode}
+          </p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/signup?ref=${referralCode}" style="background: linear-gradient(135deg, #FF5050 0%, #FF8C00 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Join Now
+          </a>
+        </div>
+      </div>
+
+      <div style="background: #333; color: white; padding: 20px; text-align: center;">
+        <p style="margin: 0;">Cheers! 🥂</p>
+        <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">The Flame Beverage Team</p>
+      </div>
+    </div>
+  `;
+
+  return await sendEmail({
+    to: friendEmail,
+    subject: `🎁 ${referrerName} invited you to join Flame Beverage!`,
+    text: `Your friend ${referrerName} has invited you to join Flame Beverage. Use referral code: ${referralCode}`,
+    html,
+  });
+};
+
+
 export default {
   sendEmail,
   sendOrderConfirmationEmail,
@@ -889,6 +940,7 @@ export default {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendPasswordResetConfirmationEmail,
+  sendReferralInvitationEmail,
   clearEmailRateLimit,
 };
 
