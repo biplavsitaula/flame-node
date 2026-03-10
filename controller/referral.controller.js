@@ -5,6 +5,7 @@ import {
 } from "../services/referral.service.js";
 import { sendReferralInvitationEmail } from "../services/email.service.js";
 import User from "../models/user.models.js";
+import CustomerDashboard from "../models/customerDashboard.model.js";
 
 /**
  * POST /customer/referral/claim
@@ -104,9 +105,17 @@ export const sendReferralInvite = async (req, res) => {
         const codeToUse = referralCode || "SPIRITS2026"; // Fallback to default if not provided
         await sendReferralInvitationEmail(friendEmail, friendName, referrer.fullName, codeToUse);
 
+        // Add 200 loyalty points to the referrer
+        const dashboard = await CustomerDashboard.findOne({ userId });
+        if (dashboard) {
+            dashboard.loyaltyPoints = (dashboard.loyaltyPoints || 0) + 200;
+            dashboard.totalPointsEarned = (dashboard.totalPointsEarned || 0) + 200;
+            await dashboard.save();
+        }
+
         res.status(200).json({
             success: true,
-            message: "Invitation sent successfully",
+            message: "Invitation sent successfully and 200 points added",
         });
     } catch (error) {
         res.status(500).json({
