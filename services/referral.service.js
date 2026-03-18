@@ -22,7 +22,7 @@ export const claimReferralReward = async (userId, referralId = null) => {
     // Build the query to find a claimable referral
     const query = {
         referrerId: userId,
-        status: "completed",
+        status: { $in: ["pending", "completed"] },
         rewardClaimed: false,
     };
 
@@ -34,7 +34,7 @@ export const claimReferralReward = async (userId, referralId = null) => {
     // Find the referral
     const referral = await Referral.findOne(query);
     if (!referral) {
-        throw new Error("Not eligible. No completed referral found or reward already claimed.");
+        throw new Error("Not eligible. No valid referral found or reward already claimed.");
     }
 
     // Validate: referred user must have at least one delivered order
@@ -60,7 +60,11 @@ export const claimReferralReward = async (userId, referralId = null) => {
             rewardClaimed: false, // Atomic check
         },
         {
-            $set: { rewardClaimed: true },
+            $set: { 
+                rewardClaimed: true,
+                status: "completed",
+                completedAt: new Date()
+            },
         },
         { new: true }
     );
