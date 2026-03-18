@@ -8,6 +8,7 @@ export const getAllOffers = async (query = {}) => {
     isActive,
     sortBy = "order",
     sortOrder = "asc",
+    search,
   } = query;
 
   const filter = {};
@@ -15,6 +16,14 @@ export const getAllOffers = async (query = {}) => {
   // Active filter
   if (isActive !== undefined) {
     filter.isActive = isActive === "true" || isActive === true;
+  }
+
+  // Search filter
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } }
+    ];
   }
 
   // Sort

@@ -20,6 +20,7 @@
     "seed:feature-images": "node ./seeders/featureImage.js",
     "seed:brands": "node ./seeders/brand.js",
     "seed:customer-dashboard": "node ./seeders/customerDashboard.js",
+    "seed:blogs": "node ./seeders/blog.js",
     "seed:all": "node ./seeders/user.js && node ./seeders/product.js && node ./seeders/order.js && node ./seeders/payment.js && node ./seeders/review.js && node ./seeders/notification.js && node ./seeders/settings.js && node ./seeders/seasonalTheme.js && node ./seeders/offer.js && node ./seeders/featureImage.js && node ./seeders/brand.js && node ./seeders/customerDashboard.js"
   },
   "repository": {
