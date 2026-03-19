@@ -10,6 +10,7 @@ import {
   acceptOrderController,
   rejectOrderController,
   calculateLoyaltyPointsController,
+  fetchUserOrderCount,
 } from "../controller/order.controller.js";
 import { authenticate, checkSuperAdmin, checkAdminViewOnly } from "../middleware/auth.middleware.js";
 
@@ -37,6 +38,9 @@ router.post("/orders/:id/reject", authenticate, checkSuperAdmin, rejectOrderCont
 
 // Loyalty points calculation (authenticated users)
 router.post("/orders/:id/loyalty-points", authenticate, calculateLoyaltyPointsController);
+
+// Fetch order count for promotional banner (authenticated users)
+router.get("/orders/user/count", authenticate, fetchUserOrderCount);
 
 export default router;
 

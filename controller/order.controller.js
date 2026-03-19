@@ -10,6 +10,7 @@ import {
   rejectOrder,
   calculateAndCreditLoyaltyPoints,
   deductLoyaltyPointsForOrder,
+  getUserOrderCount,
 } from "../services/order.service.js";
 
 export const fetchAllOrders = async (req, res) => {
@@ -484,6 +485,29 @@ export const calculateLoyaltyPointsController = async (req, res) => {
     res.status(400).json({
       success: false,
       message: error.message || "Error calculating loyalty points",
+    });
+  }
+};
+
+export const fetchUserOrderCount = async (req, res) => {
+  try {
+    const email = req.user?.email || req.query.email;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const count = await getUserOrderCount(email);
+    res.status(200).json({
+      success: true,
+      data: { count },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error fetching order count",
     });
   }
 };

@@ -110,10 +110,24 @@ export const createOrder = async (orderData) => {
   // Calculate subtotal
   const subtotal = itemsWithTotals.reduce((sum, item) => sum + item.total, 0);
 
-  // Calculate delivery fee (free if subtotal >= 2000)
-  const deliveryFee = orderData.deliveryFee !== undefined
-    ? orderData.deliveryFee
-    : (subtotal >= 2000 ? 0 : 500);
+  // Check previous orders count for discount
+  let customerEmail = orderData.customer?.email;
+  let orderCount = 0;
+  if (customerEmail) {
+    orderCount = await Order.countDocuments({ "customer.email": customerEmail, status: { $ne: "rejected" } });
+  }
+
+  // Calculate delivery fee
+  let deliveryFee = 500;
+  if (orderData.deliveryFee !== undefined) {
+    deliveryFee = orderData.deliveryFee;
+  } else if (orderCount === 0) {
+    deliveryFee = 0; // Free delivery for 1st order
+  } else if (orderCount === 1) {
+    deliveryFee = 250; // 50% discount for 2nd order
+  } else if (subtotal >= 2000) {
+    deliveryFee = 0; // Free over 2000
+  }
 
   // Calculate total amount
   const totalAmount = subtotal + deliveryFee;
@@ -289,8 +303,18 @@ export const checkout = async (checkoutData) => {
   // Calculate subtotal
   const subtotal = itemsWithTotals.reduce((sum, item) => sum + item.total, 0);
 
-  // Calculate delivery fee (free if subtotal >= 2000)
-  const deliveryFee = subtotal >= 2000 ? 0 : 500;
+  // Count previous orders for this email
+  const orderCount = await Order.countDocuments({ "customer.email": email, status: { $ne: "rejected" } });
+
+  // Calculate delivery fee
+  let deliveryFee = 500;
+  if (orderCount === 0) {
+    deliveryFee = 0; // First order free
+  } else if (orderCount === 1) {
+    deliveryFee = 250; // Second order 50% off
+  } else if (subtotal >= 2000) {
+    deliveryFee = 0; // Free delivery for >2000
+  }
 
   // Calculate total amount
   const totalAmount = subtotal + deliveryFee;
@@ -767,6 +791,10 @@ export const deleteOrder = async (id) => {
   return await Order.findByIdAndDelete(id);
 };
 
+export const getUserOrderCount = async (email) => {
+  if (!email) return 0;
+  return await Order.countDocuments({ "customer.email": email, status: { $ne: "rejected" } });
+};
 
 
 
