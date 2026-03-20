@@ -72,7 +72,8 @@ const seedBlogs = async () => {
         // prepare blogs with valid authorIds
         const blogsToSeed = blogsData.map((blog, index) => ({
             ...blog,
-            authorId: users[index % users.length]._id
+            authorId: users[index % users.length]._id,
+            isApproved: true
         }));
 
         // insert blogs
