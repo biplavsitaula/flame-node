@@ -25,8 +25,8 @@ export const getAllBlogs = async (query = {}) => {
     }
 
     if (category) filter.category = category;
-    
-    // Default behavior: show only approved blogs to public, 
+
+    // Default behavior: show only approved blogs to a public, 
     // unless explicitly requested otherwise (e.g. for admin)
     if (isApproved !== undefined) {
         filter.isApproved = isApproved === 'true';
