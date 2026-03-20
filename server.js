@@ -23,6 +23,7 @@ import offerRoutes from "./routes/offer.route.js";
 import featureImageRoutes from "./routes/featureImage.route.js";
 import customerDashboardRoutes from "./routes/customerDashboard.route.js";
 import referralRoutes from "./routes/referral.route.js";
+import blogRoutes from "./routes/blog.route.js";
 
 dotenv.config();
 connectDB();
@@ -281,6 +282,7 @@ app.use("/api", offerRoutes);
 app.use("/api", featureImageRoutes);
 app.use("/api", customerDashboardRoutes);
 app.use("/api", referralRoutes);
+app.use("/api", blogRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
