@@ -55,7 +55,7 @@ export const createNewBlog = asyncHandler(async (req, res) => {
         image,
         category,
         tags,
-        authorId: req.user._id 
+        authorId: req.user.userId 
     });
 
     res.status(201).json({
