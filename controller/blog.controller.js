@@ -39,7 +39,10 @@ export const fetchBlogById = asyncHandler(async (req, res) => {
  * Create new blog
  */
 export const createNewBlog = asyncHandler(async (req, res) => {
-    const { title, ingredients, instructions, image, category, tags } = req.body;
+    const { 
+        title, ingredients, instructions, image, category, tags,
+        timeTaken, difficulty, totalCalories, servings, mixologistTips 
+    } = req.body;
 
     if (!title || !ingredients || !instructions) {
         return res.status(400).json({
@@ -55,6 +58,11 @@ export const createNewBlog = asyncHandler(async (req, res) => {
         image,
         category,
         tags,
+        timeTaken,
+        difficulty,
+        totalCalories,
+        servings,
+        mixologistTips,
         authorId: req.user.userId 
     });
 

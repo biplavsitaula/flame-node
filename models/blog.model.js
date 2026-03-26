@@ -36,6 +36,27 @@ const blogSchema = new mongoose.Schema(
         isApproved: {
             type: Boolean,
             default: false
+        },
+        timeTaken: {
+            type: String,
+            default: ""
+        },
+        difficulty: {
+            type: String,
+            enum: ["Easy", "Medium", "Hard"],
+            default: "Easy"
+        },
+        totalCalories: {
+            type: Number,
+            default: 0
+        },
+        servings: {
+            type: Number,
+            default: 1
+        },
+        mixologistTips: {
+            type: String,
+            default: ""
         }
     },
     {
