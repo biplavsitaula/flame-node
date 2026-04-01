@@ -26,48 +26,6 @@ const seedOrders = async () => {
         panNumber: "ABCDE1234F",
         location: "Lalitpur, Nepal",
       },
-      {
-        fullName: "Sita Sharma",
-        mobile: "9842345678",
-        panNumber: "FGHIJ5678K",
-        location: "Pokhara, Nepal",
-      },
-      {
-        fullName: "Rajesh Kumar",
-        mobile: "9843456789",
-        panNumber: "KLMNO9012P",
-        location: "Kathmandu, Nepal",
-      },
-      {
-        fullName: "Maya Thapa",
-        mobile: "9844567890",
-        panNumber: "PQRST3456U",
-        location: "Bhaktapur, Nepal",
-      },
-      {
-        fullName: "Ram Shrestha",
-        mobile: "9845678901",
-        panNumber: "UVWXY7890Z",
-        location: "Kathmandu, Nepal",
-      },
-      {
-        fullName: "Sunita Gurung",
-        mobile: "9846789012",
-        panNumber: "ZABCD1234E",
-        location: "Pokhara, Nepal",
-      },
-      {
-        fullName: "Bikash Tamang",
-        mobile: "9847890123",
-        panNumber: "EFGHI5678J",
-        location: "Lalitpur, Nepal",
-      },
-      {
-        fullName: "Puja Rai",
-        mobile: "9848901234",
-        panNumber: "JKLMN9012O",
-        location: "Kathmandu, Nepal",
-      },
     ];
 
     const paymentMethods = ["COD", "Online"];
@@ -75,7 +33,7 @@ const seedOrders = async () => {
     const statuses = ["placed", "in-progress", "delivered", "completed"];
 
     const orders = [];
-    
+
     // Get current year for bill number generation
     const currentYear = new Date().getFullYear();
     let billCounter = 1;
@@ -85,7 +43,7 @@ const seedOrders = async () => {
       const customer = customers[Math.floor(Math.random() * customers.length)];
       const paymentMethod =
         paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
-      const paymentGateway = paymentMethod === "Online" 
+      const paymentGateway = paymentMethod === "Online"
         ? paymentGateways[Math.floor(Math.random() * paymentGateways.length)]
         : null;
       const status = statuses[Math.floor(Math.random() * statuses.length)];

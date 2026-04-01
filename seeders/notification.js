@@ -10,6 +10,7 @@ dotenv.config();
 const seedNotifications = async () => {
   try {
     await connectDB();
+    console.log("🌱 Seeding notifications...");
 
     // Get some data for notifications
     const products = await Product.find({ stock: { $lt: 10 } }).limit(5);
@@ -19,7 +20,12 @@ const seedNotifications = async () => {
       .limit(10);
 
     // Clear existing notifications
-    await Notification.deleteMany();
+    await Notification.deleteMany({});
+    console.log("🗑️  Cleared existing notifications");
+
+    // Clear existing payments
+    await Payment.deleteMany({});
+    console.log("🗑️  Cleared existing payments");
 
     const notifications = [];
 
@@ -125,7 +131,7 @@ const seedNotifications = async () => {
 
     console.log(`✅ ${insertedNotifications.length} notifications seeded successfully!`);
     console.log(`   - ${notifications.filter(n => !n.isRead).length} unread notifications`);
-    process.exit();
+    process.exit(0);
   } catch (error) {
     console.error("❌ Seeding failed:", error);
     process.exit(1);
