@@ -6,7 +6,7 @@ import Product from "../models/product.models.js";
 dotenv.config();
 
 const productsData = [
-  // Out of Stock Products (for Stock Alerts)
+  // Out of Stock Products (for Stock Alert)
   {
     name: "old monk 75ml",
     category: "Champagne",
